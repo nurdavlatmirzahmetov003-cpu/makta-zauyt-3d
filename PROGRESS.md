@@ -7,8 +7,8 @@
 | 1 — Landing page | ✅ done |
 | 2 — Nature & environment | ✅ done |
 | 3 — Buildings, roads, fence, gate | ✅ done |
-| 4 — Interior production line & flow | ⏳ next |
-| 5 — Robots & vehicles | — |
+| 4 — Interior production line & flow | ✅ done |
+| 5 — Robots & vehicles | ⏳ next |
 | 6 — UI & interactivity | — |
 | 7 — 360° tour | — |
 | 8 — Lighting, polish, performance | — |
@@ -80,15 +80,31 @@ Deviations from the brief (deliberate):
 - A roundabout at (0, 95) holds the monument, splitting the planted median into z 40–73 and 117–150 (the fountain needs more room than a 6 m median).
 - Added a south loop road S3 (z = 205), driveways D1 (car park) and D2 (truck parking), and the highway at z = 336.
 
+## Phase 4 — done
+- `src/flow.js`: `Line` (arc-length `Path`, kind `belt` | `pipe`, 1.6 m/s), `Node` (delay → re-emit in a new form on every output line; branching; timed `source`; `sink`), `FlowSystem` (moves items, hands them to nodes, writes the instanced products). Geometry: `addBelt` (frame, scrolling teal-chevron belt ribbon with arc-length UVs, glowing edge rails, legs), `addTube` (transparent glass tube with glowing rings + supports, never on roads/sidewalks), `addPipe` (glass oil pipe with gold clamps).
+- `src/products.js`: 11 forms, one InstancedMesh each with per-instance colour: raw (grey with debris), clean, fibre bundle, seed pile, strapped bale with label, yarn cone, fabric roll (cream → dyed colour), folded shirt, «АҚ МАРЖАН» carton (canvas logo + barcode), glowing oil slug, golden bottle with label.
+- `src/production.js`: 17 lines routed port → incline → wall portal → **glass tube** → portal → incline → machine. Lines crossing a road use high portals (`PH` in `data.js`) and run as **7.25 m bridges** (baling→bales and oil→refine over the avenue, dyeing→sewing over S1). Oil runs in glass pipes: oil press → refinery → tank farm → bottling. Nodes: raw-warehouse buffer (every 6 s, paused while a truck is docked), intake truck feed (every 2.2 s while `setTruckAtDock(true, onUnload)`; `onUnload` lets Phase 5 shrink the cotton heap), ginning **branches into fibre + seed**, dyeing assigns colours (inherited by garments), dispatch sink with `hooks.onPalletFull(n)` every 24 boxes (Phase 5 sends the truck out to export), bottles → north dock sink. The factory is pre-warmed (~14 simulated minutes), so every belt is busy at start. Station animation runs only while its interior is visible.
+- `src/robots.js`: `RobotArm` (6-axis: base yaw, shoulder, elbow, wrist pitch/roll, gripper; keyframed pick → lift → move → place; optional payload) built from merged vertex-coloured links, `makeAMR`, `makeForklift`.
+- `src/interior/kit.js`: hologram signs («N · STAGE NAME», tilted, bobbing, projector + light cone), steel roof trusses with LED strips, floor guide lines, safety stripes, railings, metal stairs, mezzanine platforms.
+- Stations (`activity` 0–1 from each node drives machine speed):
+  - `interior/fibre.js`: 1 intake (giant dock robot arm, hopper, AI scanner arch with sweeping laser + «ЖИ САПА СКАНЕРІ», sampling robot, control mezzanine, exterior LED weighbridge on W street), 2 cleaning (two spiked drums under glass hoods, dust ducts, green-glowing «ТАЗА АУА» filter block), 3 ginning (5 gin stands with spinning saw-disc stacks, glass lint collector, seed auger), 4 baling (hydraulic press with moving platen and ram, strapping robot, QR label printer), 5 bale warehouse (racks with ~300 bales, overhead bridge crane with hoist, AMR carts).
+  - `interior/oil.js`: 6 seed warehouse (seed mounds, rotating augers, ceiling ducts, floor vents), 7 oil pressing (3 screw presses with spinning screws in glass, collector with glowing level, «САЛҚЫН СЫҒУ»), 8 refining (4 filter columns with moving oil levels, centrifuge under a glass dome), 9 tank farm (level gauges, manifold), 10 bottling (rotating 16-bottle filling carousel, capping robots, labeller, boxed bottles at the dock).
+  - `interior/textile.js`: 11 spinning (carding machine, 4 frames with 256 individually rotating spindles, yarn threads, rail doffer robots), 12 weaving (12 looms in 3 rows: oscillating reeds, heddles, scrolling warp sheets, growing cloth rolls), 13 dyeing (4 colour vats, fabric band over rollers changing colour bath by bath, drying tunnel, water-recycling tanks + «СУДЫҢ 95% ҚАЙТА ӨҢДЕЛЕДІ»), 14 sewing (9 tables × 2 sewing arms, laser cutting table, overhead hanger conveyor with 34 dyed shirts).
+  - `interior/logistics.js`: 15 packaging (folding robot + flaps, box erector, tape sealer, red barcode scan), 16 finished goods (8-level high-bay racks with ~1 000 cartons, two stacker cranes), 17 dispatch (palletising arm, pallet stack growing with each box, 2 robotic forklifts shuttling pallets to the docks).
+- Budget: ~230 draw calls with roofs closed; **698 with every roof open** (worst case). No console errors.
+- Screenshots: `screenshots/p4-tubes.png`, `p4-ginning.png`, `p4-fibre.png`, `p4-oil.png`, `p4-textile.png`, `p4-logistics.png`, `p4-bridge.png`, `p4-sewing.png`.
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
 - Main JS chunk ~500 kB (Three.js); fine for now.
 - Night mode is only a preview (`?debug` → `__app.world.env.setSun(-10)` + `__app.setNightLevel(1)`); smooth blending, bloom and lamp light pools come in Phase 8.
-- Interiors are empty groups (`building.interior`); Phase 4 fills them. Opened-roof clones keep the emissive level from the moment of opening.
+- Opened-roof clones keep the emissive level from the moment of opening.
+- Without trucks (Phase 5) the factory runs on the 6 s buffer, so belts hold ~100 products. While a truck is docked the feed rises to every 2.2 s.
+- Stations are fairly sparse at aerial distance; they read best from the tour's orbit distance (Phase 7). Machines could be scaled up further if needed.
 - Headless Chromium (SwiftShader) renders this scene at well under 1 FPS, so a timed screenshot of the 7 s flight lands at its end; use `intro.peek(u)` to inspect flight frames. Real FPS must be checked on the iPad (Phase 8).
 - Lake water uses PMREM reflections only (no planar reflection pass, to protect iPad FPS); the «Жоғары» preset could add `Water.js` reflections in Phase 8.
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Phase 4 — interior production line and the journey of cotton (`flow.js` lines/nodes/product forms, glass tubes through the `portal` openings, bridges at 7 m over roads, the 17 stations in `src/interior/*.js`, populating each `building.interior`).
+Phase 5 — robots and vehicles: humanoid robots (walk cycle, roles, sidewalk paths, `ZEBRAS` from roads.js), more arms/AMRs/drones, and electric autonomous vehicles on `lanePath` routes. The cotton truck must call `production.setTruckAtDock(true, onUnload)` at the intake dock (W street, x ≈ −281.6, weighbridge). The semi truck loads at the dispatch docks (S2) and leaves on `production.hooks.onPalletFull`. Barriers: `gate.update(dt, vehicles)`.

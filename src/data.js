@@ -45,6 +45,7 @@ export const LOADING_SITE = {
   buildings: 'Цехтар тұрғызылуда…',
   landmarks: 'Әкімшілік пен көрме залы безендірілуде…',
   gate: 'Бас қақпа мен қоршау орнатылуда…',
+  production: 'Өндіріс желілері іске қосылуда…',
 };
 
 /* ===================== Site plan (Phase 3) =====================
@@ -54,6 +55,8 @@ export const LOADING_SITE = {
 const P = (side, off = 0) => ({ side, off, w: 4.2, h: 4.2, y: 2.4, kind: 'portal' });
 const D = (side, off = 0) => ({ side, off, w: 5, h: 5.2, y: 0, kind: 'dock' });
 const G = (side, off = 0) => ({ side, off, w: 2.4, h: 3, y: 0, kind: 'door' });
+// High portal: for conveyor bridges that cross a road at ~7 m.
+const PH = (side, off = 0) => ({ side, off, w: 4.2, h: 4.2, y: 5.6, kind: 'portal', high: true });
 
 export const ROWS = { O: -205, F: -125, T: -45 };
 
@@ -61,8 +64,8 @@ export const BUILDINGS = [
   // O — oil chain
   { id: 'raw', row: 'O', cx: -245, h: 22, roof: 'vault', name: 'ШИКІ МАҚТА ҚОЙМАСЫ', openings: [P('S'), D('W', -10), D('W', 10), G('S', 18)] },
   { id: 'seed', row: 'O', cx: -105, h: 18, roof: 'vault', name: 'МАҚТА ТҰҚЫМЫ ҚОЙМАСЫ', openings: [P('S'), P('E'), G('S', 16)] },
-  { id: 'oil', row: 'O', cx: -35, w: 40, h: 15, roof: 'flat', name: 'МАҚТА МАЙЫН ӨНДІРУ', openings: [P('W'), P('E'), G('S', 10)], green: [{ side: 'S', off: -12, w: 7 }] },
-  { id: 'refine', row: 'O', cx: 35, w: 40, h: 15, roof: 'flat', wall: 'glass', name: 'МАЙДЫ СҮЗУ ЖӘНЕ ТАЗАРТУ', openings: [P('W'), P('E'), G('S', -10)] },
+  { id: 'oil', row: 'O', cx: -35, w: 40, h: 15, roof: 'flat', name: 'МАҚТА МАЙЫН ӨНДІРУ', openings: [P('W'), PH('E'), G('S', 10)], green: [{ side: 'S', off: -12, w: 7 }] },
+  { id: 'refine', row: 'O', cx: 35, w: 40, h: 15, roof: 'flat', wall: 'glass', name: 'МАЙДЫ СҮЗУ ЖӘНЕ ТАЗАРТУ', openings: [PH('W'), P('E'), G('S', -10)] },
   { id: 'tanks', row: 'O', cx: 105, special: 'tanks', name: 'МАҚТА МАЙЫН САҚТАУ РЕЗЕРВУАРЛАРЫ' },
   { id: 'bottling', row: 'O', cx: 175, h: 13, roof: 'flat', name: 'МАҚТА МАЙЫН ҚАПТАУ БӨЛІМІ', openings: [P('W'), D('N', -12), D('N', 0), G('S', 12)], green: [{ side: 'S', off: -15, w: 8 }] },
   { id: 'biogas', row: 'O', cx: 245, special: 'biogas', name: 'ҚАЛДЫҚТАРДЫ КӘДЕГЕ ЖАРАТУ' },
@@ -70,11 +73,11 @@ export const BUILDINGS = [
   { id: 'intake', row: 'F', cx: -245, h: 14, roof: 'flat', name: 'МАҚТА ҚАБЫЛДАУ БӨЛІМІ', openings: [D('W', -12), D('W', 0), D('W', 12), P('E'), P('N'), G('S', 15)], green: [{ side: 'S', off: -14, w: 8 }] },
   { id: 'cleaning', row: 'F', cx: -175, h: 16, roof: 'flat', name: 'МАҚТА ТАЗАЛАУ ЦЕХЫ', openings: [P('W'), P('E'), G('S', 15)], green: [{ side: 'S', off: 14, w: 7 }] },
   { id: 'ginning', row: 'F', cx: -105, h: 18, roof: 'saw', roofSign: true, name: 'МАҚТА ӨҢДЕУ ЗАУЫТЫ', openings: [P('W'), P('E'), P('N'), G('S', 0)], green: [{ side: 'S', off: -15, w: 8 }, { side: 'S', off: 15, w: 8 }] },
-  { id: 'baling', row: 'F', cx: -35, w: 40, h: 15, roof: 'flat', name: 'МАҚТА ТАЛШЫҒЫН БУЫП-ТҮЮ БӨЛІМІ', openings: [P('W'), P('E'), G('S', 10)] },
-  { id: 'bales', row: 'F', cx: 35, w: 40, h: 24, roof: 'vault', name: 'МАҚТА БУМАЛАРЫНЫҢ ҚОЙМАСЫ', openings: [P('W'), P('E'), D('N', 0), G('S', -10)] },
+  { id: 'baling', row: 'F', cx: -35, w: 40, h: 15, roof: 'flat', name: 'МАҚТА ТАЛШЫҒЫН БУЫП-ТҮЮ БӨЛІМІ', openings: [P('W'), PH('E'), G('S', 10)] },
+  { id: 'bales', row: 'F', cx: 35, w: 40, h: 24, roof: 'vault', name: 'МАҚТА БУМАЛАРЫНЫҢ ҚОЙМАСЫ', openings: [PH('W'), P('E'), D('N', 0), G('S', -10)] },
   { id: 'spinning', row: 'F', cx: 105, h: 17, roof: 'saw', name: 'ЖІП ИІРУ ЦЕХЫ', openings: [P('W'), P('E'), G('S', 0)], green: [{ side: 'S', off: 16, w: 7 }] },
   { id: 'weaving', row: 'F', cx: 175, h: 17, roof: 'saw', name: 'МАТА ТОҚУ ЦЕХЫ', openings: [P('W'), P('E'), G('S', 0)], green: [{ side: 'S', off: -16, w: 7 }] },
-  { id: 'dyeing', row: 'F', cx: 245, h: 15, roof: 'flat', wall: 'glass', name: 'МАТАНЫ БОЯУ ЖӘНЕ ӨҢДЕУ', openings: [P('W'), P('S'), G('S', 14)], green: [{ side: 'W', off: 14, w: 8 }] },
+  { id: 'dyeing', row: 'F', cx: 245, h: 15, roof: 'flat', wall: 'glass', name: 'МАТАНЫ БОЯУ ЖӘНЕ ӨҢДЕУ', openings: [P('W'), PH('S'), G('S', 14)], green: [{ side: 'W', off: 14, w: 8 }] },
   // T — sewing, logistics and services
   { id: 'robots', row: 'T', cx: -245, h: 12, roof: 'flat', wall: 'glass', name: 'РОБОТТАР ОРТАЛЫҒЫ', openings: [D('S', -12), D('S', 12), G('S', 0)] },
   { id: 'energy', row: 'T', cx: -175, h: 12, roof: 'flat', name: 'ЭНЕРГИЯ ОРТАЛЫҒЫ', openings: [G('S', 0), D('E', 0)], green: [{ side: 'S', off: -14, w: 10 }, { side: 'S', off: 14, w: 10 }] },
@@ -83,7 +86,7 @@ export const BUILDINGS = [
   { id: 'dispatch', row: 'T', cx: 35, w: 40, h: 12, roof: 'flat', name: 'ДАЙЫН ӨНІМДЕРДІ ЖӨНЕЛТУ БӨЛІМІ', openings: [P('E'), D('S', -12), D('S', 0), D('S', 12)] },
   { id: 'goods', row: 'T', cx: 105, h: 24, roof: 'flat', name: 'ДАЙЫН ӨНІМ ҚОЙМАСЫ', openings: [P('W'), P('E'), G('S', 16)] },
   { id: 'packaging', row: 'T', cx: 175, h: 13, roof: 'flat', name: 'ҚАПТАУ БӨЛІМІ', openings: [P('W'), P('E'), G('S', 0)], green: [{ side: 'S', off: 15, w: 8 }] },
-  { id: 'sewing', row: 'T', cx: 245, h: 15, roof: 'saw', name: 'КИІМ ТІГУ ЦЕХЫ', openings: [P('N'), P('W'), G('S', 0)], green: [{ side: 'S', off: -15, w: 8 }] },
+  { id: 'sewing', row: 'T', cx: 245, h: 15, roof: 'saw', name: 'КИІМ ТІГУ ЦЕХЫ', openings: [PH('N'), P('W'), G('S', 0)], green: [{ side: 'S', off: -15, w: 8 }] },
   // South zone
   { id: 'admin', special: 'admin', cx: -90, cz: 70, name: 'ӘКІМШІЛІК ҒИМАРАТЫ' },
   { id: 'showroom', special: 'showroom', cx: 90, cz: 70, name: 'КӨРМЕ ЗАЛЫ' },
@@ -94,6 +97,36 @@ export const BUILDINGS = [
   { id: 'trucks', special: 'truckpark', cx: 190, cz: 80, name: 'ЖҮК КӨЛІКТЕРІ ТҰРАҒЫ' },
   { id: 'guard', special: 'guard', cx: 0, cz: 224, name: 'КҮЗЕТ БЕКЕТІ' },
 ];
+
+// Production stages (Phase 4/7). Texts verbatim from PROMPT.md.
+export const STAGES = [
+  { n: 1, building: 'intake', name: 'Мақтаны қабылдау', what: 'Алқаптан келген шикі мақта таразыда өлшеніп, жасанды интеллект сканерімен сапасы тексеріледі.' },
+  { n: 2, building: 'cleaning', name: 'Мақтаны тазалау', what: 'Айналмалы барабандар мақтаны шаңнан, жапырақтан және қоқыстан тазартады. Ауа сүзгіден өтіп, таза күйінде шығарылады.' },
+  { n: 3, building: 'ginning', name: 'Талшық пен тұқымды ажырату', what: 'Джин-машиналардың ара-дискілері талшықты тұқымнан бөледі. Талшық иіруге, тұқым майға жіберіледі.' },
+  { n: 4, building: 'baling', name: 'Престеу және буып-түю', what: 'Гидравликалық пресс талшықты тығыз бумаға айналдырады. Робот белдік тағып, QR-жапсырма басады.' },
+  { n: 5, building: 'bales', name: 'Мақта бумаларының қоймасы', what: 'Бумаларды көпірлі кран мен AMR тележкалар ақылды сөрелерге орналастырады.' },
+  { n: 6, building: 'seed', name: 'Тұқым қоймасы', what: 'Мақта тұқымы желдетілетін қоймада сақталып, шнек арқылы май цехына беріледі.' },
+  { n: 7, building: 'oil', name: 'Мақта майын өндіру', what: 'Шнекті престер тұқымнан майды химиясыз, салқын сығу әдісімен алады.' },
+  { n: 8, building: 'refine', name: 'Майды сүзу және тазарту', what: 'Сүзгі бағаналары мен центрифуга майды мөлдір әрі таза етеді.' },
+  { n: 9, building: 'tanks', name: 'Май резервуарлары', what: 'Тазартылған май үлкен резервуарларда сақталып, цистерналарға құйылады.' },
+  { n: 10, building: 'bottling', name: 'Майды бөтелкеге құю', what: 'Айналмалы карусель бөтелкелерді толтырады, роботтар қақпағын жабып, жапсырма жабыстырады.' },
+  { n: 11, building: 'spinning', name: 'Жіп иіру', what: 'Талшық созылып, ширатылып, берік жіпке айналады. Шпиндельдер минутына мыңдаған рет айналады.' },
+  { n: 12, building: 'weaving', name: 'Мата тоқу', what: 'Тоқу станоктары негіз бен арқау жіптерін айқастырып, мата тоқиды.' },
+  { n: 13, building: 'dyeing', name: 'Матаны бояу және өңдеу', what: 'Мата экологиялық бояулармен боялып, кептіріледі. Судың 95%-ы қайта пайдаланылады.' },
+  { n: 14, building: 'sewing', name: 'Киім тігу', what: 'Робот-қолдар матаны пішіп, жоғары дәлдікпен киім тігеді.' },
+  { n: 15, building: 'packaging', name: 'Қаптау', what: 'Роботтар киімді бүктеп, «АҚ МАРЖАН» қораптарына салып, штрих-код басады.' },
+  { n: 16, building: 'goods', name: 'Дайын өнім қоймасы', what: 'Автоматты стеллаж-кран қораптарды биік сөрелерге орналастырады.' },
+  { n: 17, building: 'dispatch', name: 'Жөнелту және экспорт', what: 'Паллеттер электр фураларға тиеліп, дайын өнім әлемнің түкпір-түкпіріне жөнелтіледі.' },
+];
+
+// Extra hologram / wall texts inside the stations.
+export const STATION_TEXT = {
+  coldPress: 'САЛҚЫН СЫҒУ',
+  water95: 'СУДЫҢ 95% ҚАЙТА ӨҢДЕЛЕДІ',
+  boxLogo: 'АҚ МАРЖАН',
+  cleanAir: 'ТАЗА АУА',
+  aiScan: 'ЖИ САПА СКАНЕРІ',
+};
 
 // Main gate and monument texts.
 export const GATE_TEXT = {

@@ -54,7 +54,7 @@ export function mats() {
     concrete: std({ map: apronTexture(), color: '#e4e6e2', roughness: 0.8 }),
     curb: std({ color: '#d6d8d4', roughness: 0.75 }),
     roof: std({ map: roofTexture(), roughness: 0.75, metalness: 0.15, side: THREE.DoubleSide }),
-    floor: std({ color: '#9fb2b1', roughness: 0.45, metalness: 0.1 }),
+    floor: std({ color: '#6c8082', roughness: 0.38, metalness: 0.12 }),
     deck: std({ map: deckTexture(), roughness: 0.8 }),
     hazard: std({ map: hazardTexture(), roughness: 0.6 }),
     fence: std({ map: fenceTexture(), alphaTest: 0.5, side: THREE.DoubleSide, metalness: 0.6, roughness: 0.4 }),
@@ -75,6 +75,26 @@ export function mats() {
     }),
   };
   M.water.userData.normal = water;
+  // Conveyor belt: dark rubber with glowing teal chevrons (scrolled along V by production.js).
+  const bc = document.createElement('canvas');
+  bc.width = bc.height = 128;
+  const bx = bc.getContext('2d');
+  bx.fillStyle = '#23292d';
+  bx.fillRect(0, 0, 128, 128);
+  bx.fillStyle = 'rgba(255,255,255,0.05)';
+  for (let y = 0; y < 128; y += 8) bx.fillRect(0, y, 128, 2);
+  bx.strokeStyle = PALETTE.teal;
+  bx.lineWidth = 10;
+  bx.lineCap = 'round';
+  bx.beginPath();
+  bx.moveTo(24, 84); bx.lineTo(64, 40); bx.lineTo(104, 84); // apex towards +V = direction of travel
+  bx.stroke();
+  const beltTex = new THREE.CanvasTexture(bc);
+  beltTex.colorSpace = THREE.SRGBColorSpace;
+  beltTex.wrapS = beltTex.wrapT = THREE.RepeatWrapping;
+  beltTex.anisotropy = 8;
+  M.belt = std({ map: beltTex, emissiveMap: beltTex, emissive: '#ffffff', emissiveIntensity: 0.35, roughness: 0.7 });
+  M.belt.userData.tex = beltTex;
   night.push([M.glass, 0, 1.25], [M.glowWarm, 0.25, 3.2], [M.glowTeal, 1.6, 2.6], [M.glowGold, 1.2, 2.2]);
   return M;
 }

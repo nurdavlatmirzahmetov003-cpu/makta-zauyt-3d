@@ -9,6 +9,7 @@ import { buildRoads } from './roads.js';
 import { buildBuildings } from './buildings.js';
 import { SPECIALS, buildMonument, treeSpots } from './landmarks.js';
 import { buildGate } from './gate.js';
+import { buildProduction } from './production.js';
 import { setNightLevel } from './materials.js';
 import { createEnvironment } from './world.js';
 import { buildTerrain } from './terrain.js';
@@ -91,7 +92,7 @@ const landing = createLanding({
 });
 
 // Updatable parts of the world (filled by the build steps).
-const world = { env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null };
+const world = { env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null, production: null };
 
 async function init() {
   // Real loading progress: each scene-building step reports when it completes.
@@ -111,6 +112,7 @@ async function init() {
     [LOADING_SITE.buildings, () => { world.site = buildBuildings(scene, atlas.signs, SPECIALS); }],
     [LOADING_SITE.landmarks, () => { world.monument = buildMonument(scene, atlas.signs); }],
     [LOADING_SITE.gate, () => { world.gate = buildGate(scene, atlas.safety); }],
+    [LOADING_STEPS[3], () => { world.production = buildProduction(scene, world.site); }],
     [LOADING_NATURE.trees, () => {
       const t = buildTrees(scene, [...treeSpots, ...roads.treeSpots]), s = buildShrubsAndFlowers(scene);
       if (DEBUG) console.info('[world] trees', t.count, 'shrubs', s.shrubs, 'beds', s.beds, 'lamps', roads.lampCount, 'buildings', world.site.list.size);
@@ -165,6 +167,7 @@ renderer.setAnimationLoop(() => {
   world.site?.update(dt);
   world.monument?.update(dt);
   world.gate?.update(dt);
+  world.production?.update(dt);
   if (!intro.active) controls.update();
   renderer.render(scene, camera);
 });
