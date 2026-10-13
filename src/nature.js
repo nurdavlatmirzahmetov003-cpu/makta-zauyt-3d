@@ -47,8 +47,8 @@ function planTrees() {
     for (const z of [ZONES.highway.z0 + 4, ZONES.highway.z1 - 4]) if (lakeE(x, z) > 1.15) add('poplar', x + (r() - 0.5) * 2, z, 0.85 + r() * 0.3);
   }
   // Planted alleys inside the fence.
-  for (let z = -248; z <= 226; z += 16) for (const x of [-295, 295]) add('round', x, z, 0.7 + r() * 0.2);
-  for (let x = -280; x <= 280; x += 16) add('round', x, -256, 0.7 + r() * 0.2);
+  for (let z = -248; z <= 226; z += 16) for (const x of [-296.5, 296.5]) add('round', x, z, 0.7 + r() * 0.2);
+  for (let x = -280; x <= 280; x += 16) add('round', x, -258, 0.7 + r() * 0.2);
   for (let x = 44; x <= 280; x += 16) for (const sx of [-1, 1]) add('poplar', sx * x, 234, 0.75 + r() * 0.15);
   // Willows and round trees around the lake.
   for (let i = 0; i < 90; i++) {
@@ -86,8 +86,9 @@ const COLORS = {
   willow: [[75, 100], [30, 45], [36, 48]],
 };
 
-export function buildTrees(scene) {
-  const plan = planTrees();
+/** All trees: the planned belts/alleys plus `extra` spots requested by the site ({type, x, z, s}). */
+export function buildTrees(scene, extra = []) {
+  const plan = [...planTrees(), ...extra];
   const r = mulberry32(5);
   const trunkGeo = new THREE.CylinderGeometry(0.22, 0.34, 1, 6, 1).translate(0, 0.5, 0);
   const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: '#6b5240', roughness: 0.9 }), plan.length);
@@ -142,7 +143,7 @@ export function buildShrubsAndFlowers(scene) {
     const a = r() * Math.PI * 2, e = 1.08 + r() * 0.25;
     spots.push([LAKE.x + Math.cos(a) * LAKE.rx * e, LAKE.z + Math.sin(a) * LAKE.rz * e]);
   }
-  const shrubSpots = spots.filter(([x, z]) => free(x, z) && !(Math.abs(x) < 30 && z > 200));
+  const shrubSpots = spots.filter(([x, z]) => free(x, z) && !(Math.abs(x) < 44 && z > 200));
   const shrubs = new THREE.InstancedMesh(place(blob(1, 1, 0.2, 9), { y: 0.55, sy: 0.75 }),
     new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.85 }), shrubSpots.length);
   shrubs.castShadow = shrubs.receiveShadow = true;

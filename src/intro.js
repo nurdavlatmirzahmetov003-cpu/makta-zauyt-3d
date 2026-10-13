@@ -13,9 +13,9 @@ const PATH = [
   [-440, 28, 150],     // skimming over the harvester's parcel
   [-250, 34, 330],     // over the poplar-lined highway
   [-80, 18, 330],
-  [0, 11, 292],        // in front of the gate
+  [0, 7, 306],         // in front of the main gate arch
 ];
-export const GATE_TARGET = new THREE.Vector3(0, 8.5, 240);
+export const GATE_TARGET = new THREE.Vector3(0, 12, 240);
 export const GATE_VIEW = new THREE.Vector3(...PATH[PATH.length - 1]);
 
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);

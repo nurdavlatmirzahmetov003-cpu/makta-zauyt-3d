@@ -2,8 +2,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import './style.css';
 import { fontsReady, debugFontCheck } from './fonts.js';
-import { TEXT, LOADING_STEPS, LOADING_NATURE, PALETTE } from './data.js';
-import { makeSignTexture, grassDetailTexture } from './textures.js';
+import { TEXT, LOADING_STEPS, LOADING_NATURE, LOADING_SITE, BUILDINGS, GATE_TEXT } from './data.js';
+import { grassDetailTexture } from './textures.js';
+import { buildSignAtlas, buildSafetyAtlas } from './signs.js';
+import { buildRoads } from './roads.js';
+import { buildBuildings } from './buildings.js';
+import { SPECIALS, buildMonument, treeSpots } from './landmarks.js';
+import { buildGate } from './gate.js';
+import { setNightLevel } from './materials.js';
 import { createEnvironment } from './world.js';
 import { buildTerrain } from './terrain.js';
 import { buildTrees, buildShrubsAndFlowers, buildLake } from './nature.js';
@@ -85,60 +91,7 @@ const landing = createLanding({
 });
 
 // Updatable parts of the world (filled by the build steps).
-const world = { env: null, lake: null, fields: null, wind: null };
-
-let testBoll;
-function buildGateStandIn() {
-  // Temporary cotton boll + sign at the gate position (replaced by the real gate in Phase 3).
-  const group = new THREE.Group();
-  const pedestal = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.2, 3.6, 1.2, 48),
-    new THREE.MeshStandardMaterial({ color: PALETTE.cotton, roughness: 0.4 }),
-  );
-  pedestal.position.y = 0.6;
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(3.25, 0.08, 12, 96),
-    new THREE.MeshStandardMaterial({ color: PALETTE.teal, emissive: PALETTE.teal, emissiveIntensity: 1.4 }),
-  );
-  ring.rotation.x = Math.PI / 2;
-  ring.position.y = 1.22;
-  const fluff = new THREE.MeshStandardMaterial({ color: PALETTE.cotton, roughness: 0.9 });
-  testBoll = new THREE.Group();
-  for (const [x, y, z] of [[0, 1.2, 0], [-1, 0, 0.4], [1, 0, 0.4], [0, 0, -1], [0, -0.6, 0.9]]) {
-    const s = new THREE.Mesh(new THREE.SphereGeometry(1.25, 32, 20), fluff);
-    s.position.set(x, y, z);
-    s.castShadow = true;
-    testBoll.add(s);
-  }
-  testBoll.position.y = 4;
-  group.add(pedestal, ring, testBoll);
-  pedestal.castShadow = pedestal.receiveShadow = true;
-  group.position.z = 240; // stand-in for the main gate (Phase 3)
-  scene.add(group);
-}
-
-function buildTestSign() {
-  const tex = makeSignTexture(TEXT.testSign);
-  const w = 20, h = 2.5;
-  const sign = new THREE.Mesh(
-    new THREE.PlaneGeometry(w, h),
-    new THREE.MeshStandardMaterial({ map: tex, emissiveMap: tex, emissive: '#ffffff', emissiveIntensity: 0.35, roughness: 0.6 }),
-  );
-  sign.position.set(0, 9.5, 238);
-  const frame = new THREE.Mesh(
-    new THREE.BoxGeometry(w + 0.4, h + 0.4, 0.3),
-    new THREE.MeshStandardMaterial({ color: PALETTE.graphite, metalness: 0.6, roughness: 0.35 }),
-  );
-  frame.position.set(0, 9.5, 237.83);
-  const postMat = new THREE.MeshStandardMaterial({ color: '#cfd8dc', metalness: 0.8, roughness: 0.3 });
-  for (const x of [-8, 8]) {
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 9.5, 16), postMat);
-    post.position.set(x, 4.75, 237.7);
-    post.castShadow = true;
-    scene.add(post);
-  }
-  scene.add(sign, frame);
-}
+const world = { env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null };
 
 async function init() {
   // Real loading progress: each scene-building step reports when it completes.
@@ -150,14 +103,23 @@ async function init() {
     [LOADING_NATURE.terrain, () => scene.add(buildTerrain(grassDetailTexture()))],
     [LOADING_NATURE.lake, () => { world.lake = buildLake(scene); }],
     [LOADING_STEPS[2], () => { world.fields = buildFields(scene); }],
+    [LOADING_SITE.roads, () => {
+      atlas.signs = buildSignAtlas([...BUILDINGS.map((b) => ({ id: b.id, text: b.name })), { id: 'monument', text: GATE_TEXT.monument }]);
+      atlas.safety = buildSafetyAtlas();
+      roads = buildRoads(scene, atlas.safety);
+    }],
+    [LOADING_SITE.buildings, () => { world.site = buildBuildings(scene, atlas.signs, SPECIALS); }],
+    [LOADING_SITE.landmarks, () => { world.monument = buildMonument(scene, atlas.signs); }],
+    [LOADING_SITE.gate, () => { world.gate = buildGate(scene, atlas.safety); }],
     [LOADING_NATURE.trees, () => {
-      const t = buildTrees(scene), s = buildShrubsAndFlowers(scene);
-      if (DEBUG) console.info('[world] trees', t.count, 'shrubs', s.shrubs, 'beds', s.beds);
+      const t = buildTrees(scene, [...treeSpots, ...roads.treeSpots]), s = buildShrubsAndFlowers(scene);
+      if (DEBUG) console.info('[world] trees', t.count, 'shrubs', s.shrubs, 'beds', s.beds, 'lamps', roads.lampCount, 'buildings', world.site.list.size);
     }],
     [LOADING_STEPS[0], () => buildSolarFarms(scene)],
     [LOADING_NATURE.wind, () => { world.wind = buildWindTurbines(scene); }],
-    [LOADING_STEPS[1], () => { buildGateStandIn(); buildTestSign(); }],
   ];
+  const atlas = {};
+  let roads = null;
   const total = steps.length + 1;
   landing.progress(0.02, TEXT.loading);
   await fontsReady();
@@ -178,7 +140,7 @@ async function init() {
     console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
   }
   landing.ready();
-  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world };
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel };
   window.__sceneReady = true;
 }
 
@@ -200,10 +162,9 @@ renderer.setAnimationLoop(() => {
   world.lake?.update(dt);
   world.fields?.update(dt);
   world.wind?.update(dt);
-  if (testBoll) {
-    testBoll.rotation.y = t * 0.3;
-    testBoll.position.y = 4 + Math.sin(t * 1.2) * 0.25;
-  }
+  world.site?.update(dt);
+  world.monument?.update(dt);
+  world.gate?.update(dt);
   if (!intro.active) controls.update();
   renderer.render(scene, camera);
 });

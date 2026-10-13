@@ -39,6 +39,79 @@ export const LOADING_NATURE = {
   wind: 'Жел турбиналары іске қосылуда…',
 };
 
+// Loading messages for the built environment (Phase 3).
+export const LOADING_SITE = {
+  roads: 'Жолдар мен тротуарлар төселуде…',
+  buildings: 'Цехтар тұрғызылуда…',
+  landmarks: 'Әкімшілік пен көрме залы безендірілуде…',
+  gate: 'Бас қақпа мен қоршау орнатылуда…',
+};
+
+/* ===================== Site plan (Phase 3) =====================
+ * Units: metres, north = −Z. Production rows: O (oil, z −205), F (fibre, z −125), T (sewing & logistics, z −45).
+ * Openings: portal = conveyor portal (glass tubes, Phase 4), dock = truck dock, door = personnel door.
+ */
+const P = (side, off = 0) => ({ side, off, w: 4.2, h: 4.2, y: 2.4, kind: 'portal' });
+const D = (side, off = 0) => ({ side, off, w: 5, h: 5.2, y: 0, kind: 'dock' });
+const G = (side, off = 0) => ({ side, off, w: 2.4, h: 3, y: 0, kind: 'door' });
+
+export const ROWS = { O: -205, F: -125, T: -45 };
+
+export const BUILDINGS = [
+  // O — oil chain
+  { id: 'raw', row: 'O', cx: -245, h: 22, roof: 'vault', name: 'ШИКІ МАҚТА ҚОЙМАСЫ', openings: [P('S'), D('W', -10), D('W', 10), G('S', 18)] },
+  { id: 'seed', row: 'O', cx: -105, h: 18, roof: 'vault', name: 'МАҚТА ТҰҚЫМЫ ҚОЙМАСЫ', openings: [P('S'), P('E'), G('S', 16)] },
+  { id: 'oil', row: 'O', cx: -35, w: 40, h: 15, roof: 'flat', name: 'МАҚТА МАЙЫН ӨНДІРУ', openings: [P('W'), P('E'), G('S', 10)], green: [{ side: 'S', off: -12, w: 7 }] },
+  { id: 'refine', row: 'O', cx: 35, w: 40, h: 15, roof: 'flat', wall: 'glass', name: 'МАЙДЫ СҮЗУ ЖӘНЕ ТАЗАРТУ', openings: [P('W'), P('E'), G('S', -10)] },
+  { id: 'tanks', row: 'O', cx: 105, special: 'tanks', name: 'МАҚТА МАЙЫН САҚТАУ РЕЗЕРВУАРЛАРЫ' },
+  { id: 'bottling', row: 'O', cx: 175, h: 13, roof: 'flat', name: 'МАҚТА МАЙЫН ҚАПТАУ БӨЛІМІ', openings: [P('W'), D('N', -12), D('N', 0), G('S', 12)], green: [{ side: 'S', off: -15, w: 8 }] },
+  { id: 'biogas', row: 'O', cx: 245, special: 'biogas', name: 'ҚАЛДЫҚТАРДЫ КӘДЕГЕ ЖАРАТУ' },
+  // F — fibre chain
+  { id: 'intake', row: 'F', cx: -245, h: 14, roof: 'flat', name: 'МАҚТА ҚАБЫЛДАУ БӨЛІМІ', openings: [D('W', -12), D('W', 0), D('W', 12), P('E'), P('N'), G('S', 15)], green: [{ side: 'S', off: -14, w: 8 }] },
+  { id: 'cleaning', row: 'F', cx: -175, h: 16, roof: 'flat', name: 'МАҚТА ТАЗАЛАУ ЦЕХЫ', openings: [P('W'), P('E'), G('S', 15)], green: [{ side: 'S', off: 14, w: 7 }] },
+  { id: 'ginning', row: 'F', cx: -105, h: 18, roof: 'saw', roofSign: true, name: 'МАҚТА ӨҢДЕУ ЗАУЫТЫ', openings: [P('W'), P('E'), P('N'), G('S', 0)], green: [{ side: 'S', off: -15, w: 8 }, { side: 'S', off: 15, w: 8 }] },
+  { id: 'baling', row: 'F', cx: -35, w: 40, h: 15, roof: 'flat', name: 'МАҚТА ТАЛШЫҒЫН БУЫП-ТҮЮ БӨЛІМІ', openings: [P('W'), P('E'), G('S', 10)] },
+  { id: 'bales', row: 'F', cx: 35, w: 40, h: 24, roof: 'vault', name: 'МАҚТА БУМАЛАРЫНЫҢ ҚОЙМАСЫ', openings: [P('W'), P('E'), D('N', 0), G('S', -10)] },
+  { id: 'spinning', row: 'F', cx: 105, h: 17, roof: 'saw', name: 'ЖІП ИІРУ ЦЕХЫ', openings: [P('W'), P('E'), G('S', 0)], green: [{ side: 'S', off: 16, w: 7 }] },
+  { id: 'weaving', row: 'F', cx: 175, h: 17, roof: 'saw', name: 'МАТА ТОҚУ ЦЕХЫ', openings: [P('W'), P('E'), G('S', 0)], green: [{ side: 'S', off: -16, w: 7 }] },
+  { id: 'dyeing', row: 'F', cx: 245, h: 15, roof: 'flat', wall: 'glass', name: 'МАТАНЫ БОЯУ ЖӘНЕ ӨҢДЕУ', openings: [P('W'), P('S'), G('S', 14)], green: [{ side: 'W', off: 14, w: 8 }] },
+  // T — sewing, logistics and services
+  { id: 'robots', row: 'T', cx: -245, h: 12, roof: 'flat', wall: 'glass', name: 'РОБОТТАР ОРТАЛЫҒЫ', openings: [D('S', -12), D('S', 12), G('S', 0)] },
+  { id: 'energy', row: 'T', cx: -175, h: 12, roof: 'flat', name: 'ЭНЕРГИЯ ОРТАЛЫҒЫ', openings: [G('S', 0), D('E', 0)], green: [{ side: 'S', off: -14, w: 10 }, { side: 'S', off: 14, w: 10 }] },
+  { id: 'repair', row: 'T', cx: -105, h: 12, roof: 'saw', name: 'ЖӨНДЕУ ШЕБЕРХАНАСЫ', openings: [D('S', -14), D('S', 0), D('S', 14)] },
+  { id: 'lab', row: 'T', cx: -35, w: 40, special: 'lab', name: 'ЗЕРТХАНА' },
+  { id: 'dispatch', row: 'T', cx: 35, w: 40, h: 12, roof: 'flat', name: 'ДАЙЫН ӨНІМДЕРДІ ЖӨНЕЛТУ БӨЛІМІ', openings: [P('E'), D('S', -12), D('S', 0), D('S', 12)] },
+  { id: 'goods', row: 'T', cx: 105, h: 24, roof: 'flat', name: 'ДАЙЫН ӨНІМ ҚОЙМАСЫ', openings: [P('W'), P('E'), G('S', 16)] },
+  { id: 'packaging', row: 'T', cx: 175, h: 13, roof: 'flat', name: 'ҚАПТАУ БӨЛІМІ', openings: [P('W'), P('E'), G('S', 0)], green: [{ side: 'S', off: 15, w: 8 }] },
+  { id: 'sewing', row: 'T', cx: 245, h: 15, roof: 'saw', name: 'КИІМ ТІГУ ЦЕХЫ', openings: [P('N'), P('W'), G('S', 0)], green: [{ side: 'S', off: -15, w: 8 }] },
+  // South zone
+  { id: 'admin', special: 'admin', cx: -90, cz: 70, name: 'ӘКІМШІЛІК ҒИМАРАТЫ' },
+  { id: 'showroom', special: 'showroom', cx: 90, cz: 70, name: 'КӨРМЕ ЗАЛЫ' },
+  { id: 'canteen', special: 'canteen', cx: -200, cz: 56, name: 'АСХАНА' },
+  { id: 'dorm', special: 'dorm', cx: -210, cz: 160, name: 'ҚЫЗМЕТКЕРЛЕР ЖАТАҚХАНАСЫ' },
+  { id: 'park', special: 'park', cx: -110, cz: 172, name: 'ДЕМАЛЫС АЙМАҒЫ' },
+  { id: 'shop', special: 'shop', cx: 170, cz: 160, name: 'ЗАУЫТ ДҮКЕНІ' },
+  { id: 'trucks', special: 'truckpark', cx: 190, cz: 80, name: 'ЖҮК КӨЛІКТЕРІ ТҰРАҒЫ' },
+  { id: 'guard', special: 'guard', cx: 0, cz: 224, name: 'КҮЗЕТ БЕКЕТІ' },
+];
+
+// Main gate and monument texts.
+export const GATE_TEXT = {
+  main: 'ИҚАННЫҢ АҚ МАРЖАНЫ',
+  sub: 'МАҚТА ӨҢДЕУ ӨНЕРКӘСІПТІК КЕШЕНІ · 2040',
+  monument: 'АҚ МАРЖАН',
+};
+
+// Safety and road signs (pictogram + Kazakh caption).
+export const SAFETY_SIGNS = {
+  speed: 'ЖЫЛДАМДЫҚ 20',
+  stop: 'ТОҚТА',
+  helmet: 'КАСКА МІНДЕТТІ',
+  smokeFree: 'ТҮТІНСІЗ АЙМАҚ',
+  crossing: 'ЖАЯУ ӨТКЕЛ',
+  ev: 'ЭЛЕКТР ҚУАТТАУ',
+};
+
 export const PALETTE = {
   cotton: '#fffaf0',
   teal: '#12b5a0',

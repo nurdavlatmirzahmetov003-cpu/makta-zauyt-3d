@@ -6,8 +6,8 @@
 | 0 — Skeleton & deployment | ✅ done |
 | 1 — Landing page | ✅ done |
 | 2 — Nature & environment | ✅ done |
-| 3 — Buildings, roads, fence, gate | ⏳ next |
-| 4 — Interior production line & flow | — |
+| 3 — Buildings, roads, fence, gate | ✅ done |
+| 4 — Interior production line & flow | ⏳ next |
 | 5 — Robots & vehicles | — |
 | 6 — UI & interactivity | — |
 | 7 — 360° tour | — |
@@ -59,14 +59,36 @@ New modules (all procedural, no external assets):
 - Budget: **44 draw calls, ~670 k triangles** for the whole outdoor scene.
 - Screenshots: `screenshots/p2-overview.png`, `p2-mountains.png`, `p2-field.png`, `p2-flight-*.png`.
 
+## Phase 3 — done
+New modules:
+- `src/data.js`: `BUILDINGS` (31 entries: rows O/F/T + south zone, all Kazakh sign texts verbatim), openings per building (`portal` = conveyor glass-tube portal at y 2.4 for Phase 4, `dock`, `door`), `GATE_TEXT`, `SAFETY_SIGNS`, `LOADING_SITE`.
+- `src/textures-site.js`: composite panels, curtain-wall glass (+ night emissive map with ~70 % lit panes), living green wall, asphalt, concrete apron, pavers, roof membrane, deck, hazard stripes, barrier stripes, alpha-tested fence mesh, flowing-stripe texture, and a procedural macro **cotton-boll photo** (used when `public/images/cotton.jpg` is missing).
+- `src/materials.js`: shared materials; `TILE` sizes for **world-space UVs**; `setNightLevel(k)` / `registerGlow()` drive windows, lamps, contours and signs (Phase 8 will call it).
+- `src/geo.js`: `box`, `cyl`, `rectXZ`, `shapeXZ`, `polygon`, `worldUV`, and `Batch`, which merges world-space geometry per material into one mesh (a whole district costs one draw call per material).
+- `src/signs.js`: **all 32 building signs shelf-packed into one canvas atlas** (teal gradient, gold border, cotton icon, Unbounded 700 auto-fit; the sign width follows the text and shrinks proportionally, never squeezed). Safety-sign atlas (speed 20, «ТОҚТА», helmet, smoke-free, crossing, EV) with Kazakh captions. Large glowing gate lettering.
+- `src/buildings.js`: `makeBuilding` logic. Walls are built from bands (solid base / glass ribbon / panel top), with every opening cut through all bands. Gold line, steel pilasters, glowing teal parapet contour and corner strips, green walls, decorated portals/docks/doors, interior floor. **Openable roofs** (`flat` with solar grid + fans, `saw` with south solar slopes + north glass skylights + gables, `vault` segmental shell with glass gables, crest skylight and steel ribs). `Building.setRoof(open)` clones the roof materials, fades opacity over 0.8 s, then hides the roof and shows `interior` (hidden again when closed). Instanced rooftop props for the whole site: **«Таза ауа мұнаралары»** (lathe tower, 4 teal rings + halo crown, closed top, so they never read as chimneys) and spinning fans; both shrink with the roof fade. The ginning hall carries the giant roof sign «МАҚТА ӨҢДЕУ ЗАУЫТЫ».
+- `src/landmarks.js`: admin (6-storey glass, solar-glass fins, green wall, roof garden + pergola, entrance canopy sign, bus stop), showroom glass dome (ribs, gold rings, oculus), laboratory (white, round windows, observatory dome), tank farm (4 × r8 h22 tanks, gold/steel rings, caged ladders, roof railings, catwalks, bund, manifold, tanker gantry on N street), biogas hall + 2 membrane digesters, canteen (glass, terrace, 8 parasols, tables), dormitory (2 × 4-storey blocks, balconies with glass rails), shop, rest park (pond, ring path, benches, pergola, monolith sign), truck parking (14 bays, EV chargers, solar carport), guard house. **«Ақ Маржан» monument** on the roundabout: glowing 5-lock cotton boll with splayed bracts, pedestal with gold/teal rings, basin with water, 16 animated fountain jets.
+- `src/roads.js`: road list (`ROADS`), asphalt rects extended into crossings, **12 m fillets** (6 m for driveways), a roundabout (r 22) with flared approaches, avenue lanes + **teal bike/robot lanes**, centre/lane/edge markings, **zebra crossings and stop lines on every leg** (exported as `ZEBRAS` for Phase 5 robots), raised sidewalks with curbs (cut at intersections), medians with shrubs/trees, ring sidewalks, **208 instanced street lamps** (warm heads + teal rings), pictogram road signs, staff car park with EV bays, industrial concrete apron, plazas, and a 4-lane highway (z 336) with the access road.
+- `src/gate.js`: perimeter fence (plinth, alpha mesh, ~730 instanced posts, glowing base line, CCTV on corners and gate posts); **sculptural arch** (tapered pylons → slim crown, extruded, teal inner contour + gold outer line) with the illuminated «ИҚАННЫҢ АҚ МАРЖАНЫ» sign on top (both sides) and «МАҚТА ӨҢДЕУ ӨНЕРКӘСІПТІК КЕШЕНІ · 2040» on the crown; cotton photo light boxes; island + lane separators; **4 animated boom barriers** (2 entry, 2 exit) with red/green lamps; inspection scanner arch with lights and a sweeping laser; 4 safety signs. API: `gate.update(dt, vehicles)` lifts a barrier when a vehicle is within 18 m; `gate.request(lane, s)`.
+- `nature.buildTrees(scene, extra)` now also plants the site's trees (avenue alleys, medians, admin plaza, park, S2 green buffer); the inner-fence alleys moved clear of the new sidewalks.
+- Intro end view now frames the arch: camera (0, 7, 306) → target (0, 12, 240).
+- Budget: **207 draw calls, ~1.07 M triangles** (31 buildings, 1 184 trees, 208 lamps). No console errors.
+- Screenshots: `screenshots/p3-gate.png`, `p3-aerial.png`, `p3-industry.png`, `p3-roof-open.png`, `p3-monument.png`, `p3-tanks.png`, `p3-night.png`.
+
+Deviations from the brief (deliberate):
+- The x = ±35 column uses w = 40 (not 52), otherwise it would overlap the 22 m avenue and its sidewalks.
+- A roundabout at (0, 95) holds the monument, splitting the planted median into z 40–73 and 117–150 (the fountain needs more room than a 6 m median).
+- Added a south loop road S3 (z = 205), driveways D1 (car park) and D2 (truck parking), and the highway at z = 336.
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
 - Main JS chunk ~500 kB (Three.js); fine for now.
-- The gate end view targets the stand-in sign; adjust `GATE_TARGET` / `GATE_VIEW` when the real arch is built in Phase 3.
+- Night mode is only a preview (`?debug` → `__app.world.env.setSun(-10)` + `__app.setNightLevel(1)`); smooth blending, bloom and lamp light pools come in Phase 8.
+- Interiors are empty groups (`building.interior`); Phase 4 fills them. Opened-roof clones keep the emissive level from the moment of opening.
 - Headless Chromium (SwiftShader) renders this scene at well under 1 FPS, so a timed screenshot of the 7 s flight lands at its end; use `intro.peek(u)` to inspect flight frames. Real FPS must be checked on the iPad (Phase 8).
 - Lake water uses PMREM reflections only (no planar reflection pass, to protect iPad FPS); the «Жоғары» preset could add `Water.js` reflections in Phase 8.
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Phase 3 — buildings, roads, fence and the main entrance (site plan from PROMPT.md §3.1). Note: production buildings at x = ±35 with w = 52 overlap the 22 m avenue (x ±11), so use w ≈ 44 for the x = ±35 column (or shift it) to keep the avenue clear.
+Phase 4 — interior production line and the journey of cotton (`flow.js` lines/nodes/product forms, glass tubes through the `portal` openings, bridges at 7 m over roads, the 17 stations in `src/interior/*.js`, populating each `building.interior`).

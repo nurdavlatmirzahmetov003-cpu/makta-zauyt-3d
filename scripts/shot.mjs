@@ -52,9 +52,11 @@ try {
       }, views[i]);
     }
     await page.waitForTimeout(waits[i] ?? 1500);
-    await page.screenshot({ path: outs[i] });
+    await page.screenshot({ path: outs[i], timeout: 120000 });
     console.log('saved', outs[i]);
   }
+} catch (e) {
+  console.log('[shot] failed:', e.message.split('\n')[0]);
 } finally {
   console.log(errors.length ? errors.join('\n') : 'no console errors');
   await browser.close();
