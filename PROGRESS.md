@@ -9,8 +9,8 @@
 | 3 — Buildings, roads, fence, gate | ✅ done |
 | 4 — Interior production line & flow | ✅ done |
 | 5 — Robots & vehicles | ✅ done |
-| 6 — UI & interactivity | ⏳ next |
-| 7 — 360° tour | — |
+| 6 — UI & interactivity | ✅ done |
+| 7 — 360° tour | ⏳ next |
 | 8 — Lighting, polish, performance | — |
 | 9 — Final QA & publishing | — |
 
@@ -122,11 +122,26 @@ Deviations from the brief (deliberate):
 - Budget: **355 draw calls** with roofs closed. No console errors.
 - Screenshots: `screenshots/p5-intake.png` (truck unloading on the weighbridge), `p5-semi.png` (semi at the dispatch dock), `p5-gate-robots.png` (greeter + security), `p5-overview.png`.
 
+## Phase 6 — done
+- `src/ui.js` + `src/ui.css`: glass interface, all text from `data.js` (`UI`, `BUILDING_INFO` for all 31 buildings, `VEHICLE_INFO`, `ROBOT_ROLES`, `FEATURES`).
+  - **Top bar**: logo, title, 5 animated live counters (☀️ solar MW from the sun height, 🌱 processed cotton and 📦 finished goods from the flow nodes, 🌿 CO₂ saved, 🤖 active robots), Kazakh number format (`1 284`, `12,1`).
+  - **Left dock** (44 px+ touch targets): БАСТЫ КӨРІНІС, ЖОҒАРЫДАН КӨРУ, ЗАУЫТҚА КІРУ (360° ТУР) (calls `world.tour.start()` once Phase 7 adds it; until then opens stage 1), ӨНДІРІС ПРОЦЕСІ, ҒИМАРАТТАР, КӨЛІКТЕР, РОБОТТАР, БАРЛЫҚ АТАУЛАР, ШАТЫРДЫ АШУ/ЖАБУ, КҮН / КҮН БАТУ / ТҮН, САПА, КАМЕРАНЫ ҚАЙТАРУ. On phones it collapses behind a menu button.
+  - **Info card**: building (stage «Не болып жатыр?», function, role, input → output pills, robots, energy, fun fact, roof button), vehicle (live speed km/h + status, follow), robot/drone/AMR (role, live status, follow).
+  - **Searchable lists** for buildings, vehicles (select = fly + follow), robots (32 humanoids by role, drones, AMRs) and the 17 process stages.
+  - **Bottom bar**: fact ticker (15 features) and a 17-stage timeline; a stage flies to its building, opens the roof and highlights the chip.
+  - Night theme (`body.night`) switches the glass to dark when the time of day passes 0.5.
+- `src/cameraman.js`: eased fly-to with a small arc, `frameBox()` (keeps the viewing direction, pitch option), follow mode that still allows orbiting, tap picking (vehicles, humanoids, drones, AMRs, buildings; nearest wins), HUD-style corner brackets + pulsing ground ring for the selection.
+- `src/labels.js`: HTML labels for 31 buildings + all vehicles, projected per frame, distance fade and overlap culling, kept clear of the top bar.
+- `src/settings.js`: quality presets Төмен (pr 1, no shadows) / Орташа (pr 1.5, 2048) / Жоғары (pr 2, 4096; touch is always capped at 1.5). Default Орташа on touch, Жоғары on desktop; automatic one-step downgrade after 3 s below 25 FPS (with a toast). Time of day blends sun, sky, fog, stars and emissive night level over 2.5 s.
+- `src/main.js`: interface built as the last loading step; taps go to picking; `?debug` shows an FPS / draw-call HUD and hides the font probe after 5 s.
+- `scripts/shot.mjs`: `--each="js|||js"` runs a snippet before each shot.
+- Screenshots: `screenshots/p6-stage-card.png` (stage 3 with roof open and the info card), `p6-vehicle-list.png` (following a cotton truck + vehicle list), `p6-night-labels.png` (night theme with all labels).
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
 - Main JS chunk ~500 kB (Three.js); fine for now.
-- Night mode is only a preview (`?debug` → `__app.world.env.setSun(-10)` + `__app.setNightLevel(1)`); smooth blending, bloom and lamp light pools come in Phase 8.
+- Night mode works from the dock, but bloom and lamp light pools come in Phase 8; the night scene is still quite dark.
 - Opened-roof clones keep the emissive level from the moment of opening.
 - Vehicles do not yield to robots on zebras (robots only cross at zebras, but traffic does not stop for them).
 - Headless SwiftShader runs at a few FPS, so screenshot tests fast-forward the simulation with `world.traffic.update(0.1)` in `--eval`.
@@ -136,4 +151,4 @@ Deviations from the brief (deliberate):
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Phase 6 — interface (top bar with live counters, left dock, picking with outline + info card, searchable lists incl. following a vehicle (`world.traffic.vehicles`), labels, bottom 17-stage timeline + fact ticker, dark night theme).
+Phase 7 — 360° tour (`src/tour.js`: 17 stages along the product path with an orbit camera at each station, stage text from `STAGES`, finale «ЭКСПОРТ ✈️ Әлемнің 30 еліне»; hook into `world.tour.start()` and `ui.setActiveStage()`).

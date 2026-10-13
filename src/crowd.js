@@ -35,28 +35,28 @@ function people() {
   const walk = (pts, opts = {}) => P.push({ pts: pts.map(([x, z]) => V(x, z)), ...opts });
   // Robots walking between the production rows and the canteen (cross S2 at the zebra).
   const canteen = [[-245, -17.8], [-273.5, -17.8], [-273.5, -2.2], [-208, -2.2], [-208, 30], [-210, 44]];
-  for (let i = 0; i < 6; i++) walk(canteen, { vest: i % 2 ? 'lime' : 'orange', start: i / 6 });
+  for (let i = 0; i < 6; i++) walk(canteen, { role: 'worker', vest: i % 2 ? 'lime' : 'orange', start: i / 6 });
   // Engineers with tablets: administration ↔ showroom over the roundabout zebra.
   const eng = [[-90, 87], [-24, 69], [24, 69], [62, 80], [90, 93]];
-  for (let i = 0; i < 4; i++) walk(eng, { vest: 'teal', pose: 'tablet', start: i / 4 });
+  for (let i = 0; i < 4; i++) walk(eng, { role: 'engineer', vest: 'teal', pose: 'tablet', start: i / 4 });
   // Security patrols at the gate and the guard on the island.
-  walk([[12.6, 225], [12.6, 238]], { body: NAVY, vest: 'gold', badge: true, start: 0.2 });
-  walk([[-12.6, 225], [-12.6, 238]], { body: NAVY, vest: 'gold', badge: true, start: 0.7 });
-  P.push({ pts: [new THREE.Vector3(0, 0.25, 231)], idle: true, body: NAVY, vest: 'gold', badge: true, yaw: 0 });
+  walk([[12.6, 225], [12.6, 238]], { role: 'security', body: NAVY, vest: 'gold', badge: true, start: 0.2 });
+  walk([[-12.6, 225], [-12.6, 238]], { role: 'security', body: NAVY, vest: 'gold', badge: true, start: 0.7 });
+  P.push({ pts: [new THREE.Vector3(0, 0.25, 231)], idle: true, role: 'security', body: NAVY, vest: 'gold', badge: true, yaw: 0 });
   // Greeter outside the gate, waving at the arriving trucks.
-  P.push({ pts: [V(13.2, 247)], idle: true, pose: 'wave', vest: 'teal', yaw: -0.5 });
+  P.push({ pts: [V(13.2, 247)], idle: true, role: 'greeter', pose: 'wave', vest: 'teal', yaw: -0.5 });
   // Visitors browsing inside the factory shop.
-  for (let i = 0; i < 3; i++) walk([[162, 156], [178, 156], [178, 164], [162, 164]], { loop: true, indoor: true, vest: 'gold', start: i / 3, speed: 0.7 });
+  for (let i = 0; i < 3; i++) walk([[162, 156], [178, 156], [178, 164], [162, 164]], { role: 'visitor', loop: true, indoor: true, vest: 'gold', start: i / 3, speed: 0.7 });
   // Laboratory robots on the apron in front of the lab.
-  for (let i = 0; i < 2; i++) walk([[-52, -21], [-18, -21]], { vest: 'teal', pose: 'tablet', start: i * 0.5 });
+  for (let i = 0; i < 2; i++) walk([[-52, -21], [-18, -21]], { role: 'lab', vest: 'teal', pose: 'tablet', start: i * 0.5 });
   // Operators on the control platforms inside the stations.
   for (const [x, y, z, yaw] of [[-230.5, 3.32, -142, 0], [-112, 2.72, -125, 1.6], [35, 4.32, -213.8, 0], [-120, 0.16, -112, 3.1], [236, 0.16, -51, 0.4], [104, 0.16, -121.5, 0]]) {
-    P.push({ pts: [new THREE.Vector3(x, y, z)], idle: true, pose: 'tablet', vest: 'orange', yaw });
+    P.push({ pts: [new THREE.Vector3(x, y, z)], idle: true, role: 'operator', pose: 'tablet', vest: 'orange', yaw });
   }
   // Warehouse robots carrying cartons inside dispatch.
-  for (let i = 0; i < 3; i++) walk([[21, -50], [49, -50]], { vest: 'lime', pose: 'carry', indoor: true, start: i / 3, speed: 1.0 });
+  for (let i = 0; i < 3; i++) walk([[21, -50], [49, -50]], { role: 'warehouse', vest: 'lime', pose: 'carry', indoor: true, start: i / 3, speed: 1.0 });
   // Robots resting on the charging pads outside the robot centre.
-  for (const x of [-251, -247, -243, -239]) P.push({ pts: [new THREE.Vector3(x, 0.08, -21)], idle: true, vest: 'teal', yaw: 0, charging: true });
+  for (const x of [-251, -247, -243, -239]) P.push({ pts: [new THREE.Vector3(x, 0.08, -21)], idle: true, role: 'charging', vest: 'teal', yaw: 0, charging: true });
   return P;
 }
 

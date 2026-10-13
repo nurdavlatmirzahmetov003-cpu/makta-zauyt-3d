@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import './style.css';
 import { fontsReady, debugFontCheck } from './fonts.js';
-import { TEXT, LOADING_STEPS, LOADING_NATURE, LOADING_SITE, BUILDINGS, GATE_TEXT } from './data.js';
+import { TEXT, LOADING_STEPS, LOADING_NATURE, LOADING_SITE, BUILDINGS, GATE_TEXT, UI } from './data.js';
 import { grassDetailTexture } from './textures.js';
 import { buildSignAtlas, buildSafetyAtlas } from './signs.js';
 import { buildRoads } from './roads.js';
@@ -20,16 +20,19 @@ import { buildFields } from './fields.js';
 import { buildSolarFarms, buildWindTurbines } from './energy.js';
 import { createLanding } from './landing.js';
 import { createIntro, GATE_TARGET } from './intro.js';
+import { createCameraman } from './cameraman.js';
+import { createLabels } from './labels.js';
+import { createQuality, createTimeOfDay } from './settings.js';
+import { createUI } from './ui.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
 
 const canvas = document.getElementById('c');
-const ui = document.getElementById('ui');
-document.getElementById('ui-chip').textContent = `${TEXT.titleCaps} — ${TEXT.complex}`;
+const uiRoot = document.getElementById('ui');
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, IS_TOUCH ? 1.5 : 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, IS_TOUCH ? 1.5 : 2)); // refined by the quality preset
 renderer.setSize(innerWidth, innerHeight, false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -61,6 +64,7 @@ canvas.addEventListener('pointerup', (e) => {
   downPos = null;
   if (moved < 6) canvas.dispatchEvent(new CustomEvent('tap', { detail: { x: e.clientX, y: e.clientY } }));
 });
+canvas.addEventListener('tap', (e) => { if (ui && !intro.active) ui.onTap(e.detail.x, e.detail.y); });
 
 const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
 const intro = createIntro(camera, controls);
@@ -88,13 +92,28 @@ const landing = createLanding({
       skipHint.classList.remove('on');
       document.body.classList.remove('flying');
       canvas.removeEventListener('pointerdown', skipIntro);
-      ui.hidden = false;
+      uiRoot.hidden = false;
     });
   },
 });
 
 // Updatable parts of the world (filled by the build steps).
-const world = { env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null, production: null, traffic: null, robots: null };
+const world = { scene, env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null, production: null, traffic: null, robots: null };
+// Interface modules (created once the world exists).
+let ui = null, cameraman = null, labels = null, quality = null, tod = null, hud = null;
+
+function buildInterface() {
+  cameraman = createCameraman(camera, controls, world);
+  labels = createLabels(camera);
+  quality = createQuality(renderer, world, { onAuto: () => ui?.toast(UI.quality.auto) });
+  tod = createTimeOfDay(world);
+  ui = createUI({ root: uiRoot, world, camera, controls, cameraman, labels, quality, tod });
+  if (DEBUG) {
+    hud = document.createElement('div');
+    hud.className = 'debug-hud';
+    document.body.appendChild(hud);
+  }
+}
 
 async function init() {
   // Real loading progress: each scene-building step reports when it completes.
@@ -126,13 +145,17 @@ async function init() {
     }],
     [LOADING_STEPS[0], () => buildSolarFarms(scene)],
     [LOADING_NATURE.wind, () => { world.wind = buildWindTurbines(scene); }],
+    [TEXT.loading, buildInterface],
   ];
   const atlas = {};
   let roads = null;
   const total = steps.length + 1;
   landing.progress(0.02, TEXT.loading);
   await fontsReady();
-  if (DEBUG) console.table(debugFontCheck());
+  if (DEBUG) {
+    console.table(debugFontCheck());
+    setTimeout(() => document.querySelector('.font-debug')?.remove(), 5000);
+  }
   landing.progress(1 / total);
   for (let i = 0; i < steps.length; i++) {
     landing.progress((i + 1) / total, steps[i][0]);
@@ -149,7 +172,7 @@ async function init() {
     console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
   }
   landing.ready();
-  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel };
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod };
   window.__sceneReady = true;
 }
 
@@ -160,7 +183,7 @@ addEventListener('resize', () => {
 });
 
 const clock = new THREE.Clock();
-let lastT = 0;
+let lastT = 0, hudT = 0;
 renderer.setAnimationLoop(() => {
   if (!rendering) return;
   const t = clock.getElapsedTime();
@@ -176,8 +199,19 @@ renderer.setAnimationLoop(() => {
   if (world.traffic) world.traffic.update(dt); else world.gate?.update(dt);
   world.production?.update(dt);
   world.robots?.update(dt, camera);
-  if (!intro.active) controls.update();
+  tod?.update(dt);
+  if (!intro.active) {
+    cameraman?.update(dt);
+    controls.update();
+  }
   renderer.render(scene, camera);
+  labels?.update();
+  ui?.update(dt);
+  quality?.update(dt);
+  if (hud && (hudT += dt) > 0.5) {
+    hudT = 0;
+    hud.textContent = `${quality.fps.toFixed(0)} FPS · ${renderer.info.render.calls} DC · ${(renderer.info.render.triangles / 1000).toFixed(0)}k △ · ${quality.level}`;
+  }
 });
 
 init();

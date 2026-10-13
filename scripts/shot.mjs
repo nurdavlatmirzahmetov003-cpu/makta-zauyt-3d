@@ -21,6 +21,8 @@ const views = (args.find((a) => a.startsWith('--views=')) || '--views=').slice(8
   .map((v) => v.split(',').map(Number));
 const PORT = 4179;
 
+// --each="js1|||js2" runs a snippet before the matching shot.
+const each = (args.find((a) => a.startsWith('--each=')) || '--each=').slice(7).split('|||');
 const server = spawn('node', ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe' });
 // Don't leave the preview server running if this script is killed (e.g. by `timeout`).
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { server.kill(); process.exit(1); });
@@ -42,6 +44,7 @@ try {
   const ev = args.find((a) => a.startsWith('--eval='));
   if (ev) await page.evaluate(ev.slice(7));
   for (let i = 0; i < outs.length; i++) {
+    if (each[i]) await page.evaluate(each[i]);
     if (views[i]) {
       await page.evaluate((v) => {
         const { intro, camera, controls } = window.__app;

@@ -367,22 +367,6 @@ body.flying .cine { transform: none; }
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left));
 }
 @keyframes ui-in { from { opacity: 0; transform: translateY(-8px); } }
-.ui-chip {
-  display: inline-block;
-  pointer-events: auto;
-  padding: 12px 18px;
-  border-radius: 16px;
-  background: var(--glass);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: var(--shadow);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.04em;
-  color: var(--deep-teal);
-}
-
 .font-debug {
   position: fixed;
   left: 16px;
