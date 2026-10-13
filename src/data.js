@@ -302,3 +302,47 @@ export const TOUR_TEXT = {
   exportText: 'Мақта алқаптан шығып, 17 кезеңнен өтті де, «АҚ МАРЖАН» брендімен әлемге аттанды. Бірде-бір мұржа, бірде-бір қара түтін жоқ.',
   exportStats: [['17', 'кезең'], ['0%', 'қара түтін'], ['100%', 'жасыл энергия']],
 };
+
+/* ===================== PART 2 — Phase 10: living factory ===================== */
+export const CLOCK_TEXT = {
+  day: (n) => `${n}-күн`,
+  pause: 'Тоқтату', speed: 'Уақыт жылдамдығы',
+  phases: {
+    night: 'Түн', dawn: 'Таң атуда', wake: 'Таңғы іске қосу', work: 'Жұмыс уақыты', lunch: 'Түскі үзіліс',
+    closing: 'Жұмыс аяқталуда', sleep: 'Зауыт ұйқыға кетті',
+  },
+  wakeToast: '☀️ Қайырлы таң! Зауыт жұмысқа кірісті',
+  sleepToast: '🌙 Зауыт демалып жатыр · Роботтар қуаттануда',
+  charging: (a) => `Роботтар қуаттануда: ${a}% → 100%`,
+  guard: 'Күзет ешқашан ұйықтамайды',
+  newDay: (n) => `🌅 ${n}-күн басталды · Кешегі есеп мұрағатқа сақталды`,
+};
+
+// Conditional economy model (educational). Prices in ₸; every value is booked from real flow events.
+export const ECONOMY = {
+  note: 'Оқу мақсатындағы шартты есеп',
+  rawPerUnit: 0.5, // t of raw cotton per raw product unit
+  split: { fibre: 0.35, seed: 0.55, waste: 0.1 },
+  oilPerSeedT: 160, // l
+  garmentsPerFibreT: 4000,
+  fibreSoldShare: 0.3, // share of fibre sold as bales; the rest is spun, woven and sewn
+  biogasKwhPerWasteT: 400,
+  prices: { fibreKg: 900, oilL: 950, garment: 4500, biogasKwh: 40 },
+  costs: {
+    rawKg: 280, robotHour: 18000, dyePerUnit: 60000, packPerBox: 49000, truckTrip: 35000,
+    depreciationHour: 120000, electricity: 0, gridKwh: 30,
+  },
+  energy: { solarPeakMW: 20.2, windMW: 4.6, loadWorkMW: 9.5, loadNightMW: 1.8 },
+  co2PerKwh: 0.0006, // t of CO₂ for grid power
+};
+
+export const KPI_TEXT = {
+  raw: 'Қабылданған шикі мақта', fibre: 'Өндірілген талшық', oil: 'Мақта майы', garments: 'Тігілген киім',
+  trucks: 'Жөнелтілген жүк көліктері', revenue: 'Табыс', cost: 'Шығын', profit: 'Таза пайда', margin: 'Рентабельділік',
+  energy: 'Өндірілген энергия', co2: 'CO₂ үнемделді', robots: 'Белсенді роботтар',
+  saved: 'Күн энергиясы арқылы үнемделді', electricity: 'Электр қуатына шығын',
+  today: (d, time) => `📊 ${d}-күн · ${time} жағдайы бойынша`, yesterday: 'Кеше', session: 'Сайт ашылғаннан бері',
+  units: { t: 'т', l: 'л', pcs: 'дана', trucks: 'фура', mwh: 'МВт·сағ', kwh: 'кВт·сағ' },
+  costParts: { raw: 'Шикі мақта сатып алу', robots: 'Роботтарға қызмет көрсету', dye: 'Бояу және су тазарту', pack: 'Қаптама', logistics: 'Логистика', depreciation: 'Жабдықтың тозуы' },
+  open: 'Бүгінгі көрсеткіштер',
+};

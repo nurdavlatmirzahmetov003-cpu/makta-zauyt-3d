@@ -5,6 +5,7 @@ import './ui.css';
 import './tour.css';
 import { UI, TEXT, STAGES, BUILDINGS, BUILDING_INFO, VEHICLE_INFO, ROBOT_ROLES, FEATURES, FEATURES_TITLE } from './data.js';
 import { GATE_TARGET, GATE_VIEW } from './intro.js';
+import { num } from './sim/format.js';
 
 const ICON = {
   home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
@@ -29,14 +30,10 @@ const svg = (k, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="
 const LOGO = `<svg class="logo-mini" viewBox="-30 -30 60 60"><circle r="28" fill="none" stroke="url(#lgm)" stroke-width="2.5"/><defs><linearGradient id="lgm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b5a0"/><stop offset="1" stop-color="#f5c04a"/></linearGradient></defs>${[[0, -8, 9], [-9, 2, 9], [9, 2, 9], [0, 9, 8]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fffaf0" stroke="#d9e3e0" stroke-width="0.8"/>`).join('')}</svg>`;
 
 /** "1284.4" → "1 284", decimals with a comma (Kazakh style). */
-export function fmt(n, d = 0) {
-  const s = Math.abs(n).toFixed(d).split('.');
-  s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-  return (n < 0 ? '−' : '') + s.join(',');
-}
+export const fmt = (n, d = 0) => num(n, d);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-export function createUI({ root, world, camera, controls, cameraman, labels, quality, tod }) {
+export function createUI({ root, world, camera, controls, cameraman, labels, quality, tod, economy = null }) {
   const nameOf = Object.fromEntries(BUILDINGS.map((b) => [b.id, b.name]));
   const stageOf = Object.fromEntries(STAGES.map((s) => [s.building, s]));
   root.innerHTML = `
@@ -348,22 +345,21 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
   /* ---------- Counters ---------- */
   const counters = {};
   root.querySelectorAll('.counter').forEach((el) => { counters[el.dataset.k] = { el: el.querySelector('.c-val'), shown: 0 }; });
-  const robotsActive = () => {
-    const c = world.robots?.counts || {};
-    return (c.humanoids || 0) - 4 + 25 + (c.extraArms || 0) + (c.amrs || 0) + 4 + (c.drones || 0);
-  };
+  // Live counters read from the economy engine (sim/economy.js): today's totals.
   let elapsed = 0;
   function targets() {
-    const sunY = world.env?.sunDir?.y ?? 0.6;
-    const n = world.production?.nodes || {};
+    const d = economy.today;
     return {
-      sun: [Math.max(0, 20.2 * sunY), 1],
-      cotton: [1284 + (n.cleaning?.count || 0) * 0.35, 0],
-      goods: [8640 + (n.dispatch?.count || 0) * 12, 0],
-      co2: [312.5 + elapsed * 0.02, 1],
-      robots: [robotsActive(), 0],
+      sun: [economy.solarMW(), 1],
+      cotton: [d.raw, 1],
+      goods: [d.garments, 0],
+      co2: [d.co2, 1],
+      robots: [economy.activeRobots(), 0],
     };
   }
+  // Panels below the top bar follow its real height (it wraps onto two rows on narrow screens).
+  const topbar = root.querySelector('.topbar');
+  new ResizeObserver(() => document.documentElement.style.setProperty('--top-b', `${Math.round(topbar.getBoundingClientRect().bottom)}px`)).observe(topbar);
 
   /** Connect the 360° tour (created after the interface). */
   function bindTour(tour) {
@@ -390,8 +386,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     },
     update(dt) {
       elapsed += dt;
-      const T = targets();
-      for (const [k, [v, d]] of Object.entries(T)) {
+      for (const [k, [v, d]] of Object.entries(economy ? targets() : {})) {
         const c = counters[k];
         c.shown += (v - c.shown) * Math.min(1, dt * 2.5);
         if (Math.abs(v - c.shown) < 0.05) c.shown = v;

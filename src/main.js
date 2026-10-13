@@ -27,6 +27,11 @@ import { createLabels } from './labels.js';
 import { createQuality, createTimeOfDay } from './settings.js';
 import { createUI } from './ui.js';
 import { createTour } from './tour.js';
+import { createClock } from './sim/clock.js';
+import { createLife } from './sim/life.js';
+import { createEconomy } from './sim/economy.js';
+import { createClockUI } from './sim/clock-ui.js';
+import { buildNight } from './sim/night.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -108,6 +113,8 @@ const landing = createLanding({
 const world = { scene, env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null, production: null, traffic: null, robots: null, tour: null, showroom: null };
 // Interface modules (created once the world exists).
 let ui = null, cameraman = null, labels = null, quality = null, tod = null, hud = null;
+// Living factory (Part 2): simulation clock, day cycle, economy, clock widget, night atmosphere.
+let simClock = null, life = null, economy = null, clockUI = null, nightFx = null;
 const post = createPost(renderer, scene, camera);
 onNight((k) => post.setNight(k));
 
@@ -115,14 +122,21 @@ function buildInterface() {
   cameraman = createCameraman(camera, controls, world);
   labels = createLabels(camera);
   quality = createQuality(renderer, world, { onAuto: () => ui?.toast(UI.quality.auto) });
-  tod = createTimeOfDay(world);
+  // The factory is already running when the site opens: 07:40 on day 1.
+  simClock = createClock({ start: 7 * 60 + 40, day: 1 });
+  life = createLife({ clock: simClock, world, scene, toast: (m) => ui?.toast(m) });
+  economy = createEconomy({ clock: simClock, world, life });
+  tod = createTimeOfDay(world, simClock, { getWork: () => life.state.power });
+  nightFx = buildNight(scene, world.env);
+  tod.init();
   // Bloom only on «Жоғары»; the pixel ratio change also resizes the composer.
   const applyPost = (l) => { post.setEnabled(l === 'high'); post.resize(); };
   quality.onChange(applyPost);
   applyPost(quality.level);
-  ui = createUI({ root: uiRoot, world, camera, controls, cameraman, labels, quality, tod });
+  ui = createUI({ root: uiRoot, world, camera, controls, cameraman, labels, quality, tod, economy });
   world.tour = createTour({ scene, camera, controls, world, cameraman, tod, root: uiRoot });
   ui.bindTour(world.tour);
+  clockUI = createClockUI({ root: uiRoot, clock: simClock, life, economy, toast: (m) => ui.toast(m), tourActive: () => world.tour?.active });
   if (DEBUG) {
     hud = document.createElement('div');
     hud.className = 'debug-hud';
@@ -188,7 +202,7 @@ async function init() {
     console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
   }
   landing.ready();
-  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, post };
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, post, clock: simClock, life, economy, step: stepWorld };
   window.__sceneReady = true;
 }
 
@@ -199,24 +213,40 @@ addEventListener('resize', () => {
   post.resize();
 });
 
-const clock = new THREE.Clock();
+const clock = new THREE.Clock(); // real time
 let lastT = 0, hudT = 0;
+/** One frame of world logic (no rendering); `dt` is real time. Also used by tests (`__app.step`). */
+function stepWorld(dt) {
+  // Simulation time: scaled by the clock speed (⏸ 1× 2× 5× 10× 30×).
+  const simDt = simClock ? simClock.update(dt) : dt;
+  life?.update();
+  tod?.update(dt);
+  const sd = Math.min(simDt, 0.5); // cosmetic animations (water, clouds, turbines) need no sub-steps
+  world.env?.update(sd);
+  world.lake?.update(sd);
+  world.fields?.update(sd);
+  world.wind?.update(sd);
+  world.monument?.update(sd);
+  world.site?.update(dt, sd, life?.buildingPower);
+  nightFx?.update(dt, simClock?.minutes ?? 0, tod?.night ?? 0);
+  // Sub-steps of ≤ 0.1 s keep traffic, robots and the product flow stable at high speeds.
+  const steps = Math.max(1, Math.ceil(simDt / 0.1)), h = simDt / steps;
+  for (let i = 0; i < steps; i++) {
+    const last = i === steps - 1;
+    if (world.traffic) world.traffic.update(h); else world.gate?.update(h);
+    world.production?.update(h, { render: last, animDt: simDt });
+    world.robots?.update(h, camera, last);
+    economy?.update(h);
+  }
+}
+
 renderer.setAnimationLoop(() => {
   if (!rendering) return;
   const t = clock.getElapsedTime();
-  const dt = Math.min(0.1, t - lastT);
+  const dt = Math.min(0.1, t - lastT); // real time: camera, UI, roof fades
   lastT = t;
   intro.update(t);
-  world.env?.update(dt);
-  world.lake?.update(dt);
-  world.fields?.update(dt);
-  world.wind?.update(dt);
-  world.site?.update(dt);
-  world.monument?.update(dt);
-  if (world.traffic) world.traffic.update(dt); else world.gate?.update(dt);
-  world.production?.update(dt);
-  world.robots?.update(dt, camera);
-  tod?.update(dt);
+  stepWorld(dt);
   world.tour?.update(dt);
   if (!intro.active) {
     cameraman?.update(dt);
@@ -226,6 +256,7 @@ renderer.setAnimationLoop(() => {
   post.render(dt);
   labels?.update();
   ui?.update(dt);
+  clockUI?.update(dt);
   quality?.update(dt);
   if (hud && (hudT += dt) > 0.5) {
     hudT = 0;

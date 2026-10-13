@@ -12,7 +12,15 @@
 | 6 — UI & interactivity | ✅ done |
 | 7 — 360° tour | ✅ done |
 | 8 — Lighting, polish, performance | ✅ done |
-| 9 — Final QA & publishing | ⏳ next |
+| 9 — Final QA & publishing | 🟡 QA script, README and size checks done; merge to `main` + Pages pending |
+
+### Part 2 (`PROMPT2.md`)
+| Phase | Status |
+|---|---|
+| 10 — Living factory: clock, day/night cycle, economy | ✅ done |
+| 11 — «Ақылды көмекші» chatbot + daily report | ⏳ next |
+| 12 — Robot guide «Маржан» + «Бөлшектеп көру» | — |
+| 13 — Robots page, robot chat, manual control, final QA | — |
 
 ## Phase 0 — done
 - Vite 8 + Three.js 0.170.0 (pinned). `vite.config.js`: `base: './'`, `outDir: 'docs'`. `docs/` is committed (Pages backup source).
@@ -161,6 +169,22 @@ Deviations from the brief (deliberate):
 - Loading progress was already real (one `await requestAnimationFrame` per build step).
 - Screenshots: `screenshots/p8-night.png`, `p8-sunset.png`, `p8-led-wall.png`, `p8-features.png`.
 
+## Phase 9 — partly done
+- `scripts/qa.mjs` (`npm run qa`): touch profile 1180×820 taps 53 interface steps (dock, card, lists, search, tour bar, finale, features, labels, roofs, time, quality, timeline, reset), screenshot after each, Kazakh glyph check (fonts API + canvas fallback comparison: no missing Ә Ғ Қ Ң Ө Ұ Ү Һ І in Inter or Unbounded), then 1180×820 / 820×1180 / 390×844 / 1920×1080 layout checks (every panel inside the viewport). Runs: all taps OK except a test-order bug (fixed); all four sizes fit; no console errors.
+- Fixed from QA: on phones the menu button now sits under the top bar (the card bottom sheet covered it) and the open menu hides the card behind it.
+- `README.md` (Kazakh): live link, screenshot table, 2-minute defence script, controls, tech notes.
+- Still to do: merge into `main`, confirm the Pages workflow (Settings → Pages → Source «GitHub Actions» may need to be enabled once by the owner).
+
+## Phase 10 — done (Part 2)
+- `src/sim/clock.js`: game time 0–1440 min + day number; **1× = 1 game minute per real second**; speeds ⏸ 0× 1× 2× 5× 10× 30×; `jumpTo()` fast-forwards (never backwards) over 2.5 s so every transition stays smooth. Starts at **07:40, «1-күн»** — the factory is already running.
+- `main.js` `stepWorld()`: `simDt = realDt × speed` drives vehicles, robots, product flow, machines, fans, water, clouds, turbines; the simulation is **sub-stepped (≤ 0.1 s)** so 30× stays stable; products, robots and stations are drawn once per frame. Camera, UI, roof fades and the tour stay on real time. `__app.step(dt)` exposes one frame for tests.
+- **Sun from the clock** (`settings.js` `sunAt`): sunrise 06:00, sunset 19:55, noon elevation 56°, azimuth east → south → west; the moon light takes over at night. Light/shadows move every frame; PMREM reflections refresh only when the sky changed by > 0.8° (max ~3×/s). The dock buttons КҮН / КҮН БАТУ / ТҮН now jump the clock to 12:00 / 19:30 / 23:00; the tour finale jumps to 19:10 only during the day.
+- **Day schedule** (`src/sim/life.js`, a pure function of the clock): «Таң атуда» → 06:30 «Таңғы іске қосу» (**light wave**: a glowing shell + outline flashes over the 17 production buildings in chain order; each building powers up in turn; belts, machines and fans ramp up; trucks start; toast «☀️ Қайырлы таң! Зауыт жұмысқа кірісті») → «Жұмыс уақыты» → 12:00 «Түскі үзіліс» (workers walk to the canteen and back) → 20:00 «Жұмыс аяқталуда» (no new raw cotton, products drain, at 20:30 the semi leaves with whatever is loaded) → 21:00 «Зауыт ұйқыға кетті» (belts and machines stop over 20 game minutes, fans spin down, windows fade to a soft glow, robots walk back — workers into the robot centre through its door — with dim "breathing" visors; toast «🌙 Зауыт демалып жатыр · Роботтар қуаттануда») → «Түн» (security robots, the greeter, drones and robot-centre maintenance arms keep working; the night card shows «🔋 Роботтар қуаттануда: 64% → 100%» and «Күзет ешқашан ұйықтамайды»). Trucks only start trips while the schedule allows them. 00:00: new day, toast, yesterday archived.
+- **Night / dawn atmosphere** (`src/sim/night.js`): moon sprite (where the moon light comes from), milky-way band (2 600 points), 90 blinking fireflies over the park and lake shore, morning mist over the lake (05:00–08:00), a pulsing halo around the «Ақ Маржан» boll.
+- **Economy engine** (`src/sim/economy.js`, constants in `data.js` `ECONOMY`, labelled «Оқу мақсатындағы шартты есеп»), booked from real events: raw unit spawned (0,5 т, raw cost 280 ₸/кг) → cleaning (waste → biogas, 40 ₸/кВт·сағ) → ginning (0,35 т fibre / 0,55 т seed per t) → baling (30 % of fibre sold as bales, booked when the bale truck leaves, 900 ₸/кг) → bottling (160 л per t of seed; revenue at the bottle dock, 950 ₸/л) → dyeing (dye + water cost) → sewing (≈ 4 000 garments per t of the remaining fibre) → packaging (cost) → dispatch (garment revenue 4 500 ₸ booked **only when the semi departs**). Logistics 35 000 ₸ per truck trip, robots 18 000 ₸ per working hour, depreciation per hour, electricity **0 ₸** (own solar + wind) with «Күн энергиясы арқылы үнемделді» at 30 ₸/кВт·сағ, CO₂ from the renewable kWh. Today (with 24 hourly buckets), yesterday and session totals. Example after the first morning: 12:40 → 37,5 т raw, 14,0 т fibre, 2 640 л oil, 24 500 garments, revenue 22 204 000 ₸, cost 17 595 460 ₸, profit 4 608 540 ₸ (26 %).
+- **UI**: clock widget in the top bar (sun / dawn / dusk / moon icon, `07:42`, «1-күн», phase name, ⏸ 1× 2× 5× 10× 30×; Space = pause, keys 1–5 = speeds); the top-bar counters now read today's totals from the engine; tapping the clock or counters opens «📊 N-күн · HH:MM жағдайы бойынша» with the 12 Kazakh KPIs. `src/sim/format.js`: `Intl.NumberFormat('kk-KZ')` with a manual fallback (`12 450 000 ₸`, `3,8 т`, `1 284 л`). Panels below the top bar follow its measured height (`--top-b`), since the bar wraps on narrow screens.
+- Screenshots: `screenshots/p10-day-kpi.png` (12:40, KPI panel), `p10-night.png` (01:33, sleeping factory, charging card), `p10-wake.png` (06:39, light wave + morning toast).
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
@@ -175,4 +199,4 @@ Deviations from the brief (deliberate):
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Phase 9 — final QA (button-tapping Playwright script, screenshots at 1180×820 / 820×1180 / 390×844 / 1920×1080, Kazakh glyph check), merge to `main`, GitHub Pages, README with live link, screenshots and the 2-minute defence script.
+Part 2, Phase 11 — «Ақылды көмекші» chatbot (offline Kazakh intent engine) and the live daily report card with charts, CSV and print. Phase 9's merge into `main` is still open.

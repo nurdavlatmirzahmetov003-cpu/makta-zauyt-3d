@@ -112,14 +112,15 @@ export function buildProduction(scene, site) {
 
   // ---------- Nodes ----------
   const truck = { atDock: false, onUnload: null };
+  const schedule = { accepting: true, power: 1, buildingPower: () => 1 }; // set by the day cycle (sim/life.js)
   const nodes = {};
   const out = (id, color) => [{ line: lines[id], form: lines[id].form, color }];
   let dye = 0;
   const N = (id, opts) => (nodes[id] = flow.addNode(new Node(id, opts)));
-  N('raw', { source: { every: 6, line: lines.raw, form: 'raw', color: '#e6e1d6', when: () => !truck.atDock } });
+  N('raw', { source: { every: 6, line: lines.raw, form: 'raw', color: '#e6e1d6', when: () => !truck.atDock && schedule.accepting } });
   N('intake', {
     delay: 2.5, outputs: out('L1'),
-    source: { every: 2.2, line: lines.L1, form: 'raw', color: '#e6e1d6', when: () => truck.atDock, onSpawn: () => truck.onUnload?.() },
+    source: { every: 2.2, line: lines.L1, form: 'raw', color: '#e6e1d6', when: () => truck.atDock && schedule.accepting, onSpawn: () => truck.onUnload?.() },
   });
   N('cleaning', { delay: 3, outputs: out('L2', () => '#ffffff') });
   N('ginning', { delay: 3, outputs: [...out('L3', () => '#ffffff'), ...out('L4', () => '#ffffff')] });
@@ -178,18 +179,26 @@ export function buildProduction(scene, site) {
   const beltTex = m.belt.userData.tex;
   let t = 0;
   return {
-    flow, nodes, lines, stations, truck, hooks,
+    flow, nodes, lines, stations, truck, hooks, schedule,
     /** Call from Phase 5 when a cotton truck is parked at / leaves the intake dock. */
     setTruckAtDock(on, onUnload = null) { truck.atDock = on; truck.onUnload = onUnload; },
-    update(dt) {
-      t += dt;
-      flow.update(dt);
+    /**
+     * Step the flow by `dt` (sim seconds, scaled by the factory power: belts stop when it sleeps).
+     * Rendering (product instances, belts, station machines) happens only on the last sub-step,
+     * with `animDt` = the whole frame's sim time.
+     */
+    update(dt, { render = true, animDt = dt } = {}) {
+      const p = schedule.power;
+      flow.update(dt * p);
+      if (!render) return;
+      t += animDt;
       flow.render();
-      beltTex.offset.y -= (1.6 / 1.2) * dt;
+      beltTex.offset.y -= (1.6 / 1.2) * animDt * p;
       for (const s of stations) {
-        s.act += ((s.node?.activity ?? 0.5) - s.act) * Math.min(1, dt * 1.5);
+        const bp = schedule.buildingPower(s.id);
+        s.act += ((s.node?.activity ?? 0.5) * bp - s.act) * Math.min(1, animDt * 1.5);
         if (!s.b.interior.visible) continue;
-        s.station.update(dt, 0.25 + 0.75 * s.act, t);
+        if (bp > 0.01) s.station.update(animDt * bp, (0.25 + 0.75 * s.act) * bp, t);
         s.holo.userData.update(t);
       }
     },

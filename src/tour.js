@@ -306,7 +306,7 @@ export function createTour({ scene, camera, controls, world, cameraman, tod, roo
     if (!semiHeld) traffic.holdSemi();
     semiHeld = false;
     traffic.releaseSemi(10);
-    tod.set('golden');
+    tod.golden?.();
     env.setShadowFocus();
     emit('stage', 17);
     refreshBar();

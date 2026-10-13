@@ -8,7 +8,7 @@ body.touring .dock-btn[data-a="tour"].live { box-shadow: 0 0 0 2px rgba(255, 255
 .tour-panel {
   position: fixed;
   right: max(12px, env(safe-area-inset-right));
-  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  top: calc(var(--top-b, 68px) + 14px);
   width: min(370px, calc(100% - 24px));
   max-height: calc(100% - 230px);
   overflow-y: auto;
@@ -103,7 +103,7 @@ body.touring .dock-btn[data-a="tour"].live { box-shadow: 0 0 0 2px rgba(255, 255
 .tour-finale {
   position: fixed;
   right: max(12px, env(safe-area-inset-right));
-  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  top: calc(var(--top-b, 68px) + 14px);
   width: min(400px, calc(100% - 24px));
   padding: 28px 30px 24px;
   text-align: center;
@@ -136,7 +136,7 @@ body.touring .dock-btn[data-a="tour"].live { box-shadow: 0 0 0 2px rgba(255, 255
 @media (max-width: 760px) {
   .tour-panel, .tour-finale { left: 12px; right: 12px; width: auto; top: auto; bottom: 178px; max-height: 38vh; }
   .tour-finale { overflow-y: auto; padding: 18px; }
-  .tour-caption { bottom: auto; top: calc(max(12px, env(safe-area-inset-top)) + 120px); }
+  .tour-caption { bottom: auto; top: calc(var(--top-b, 110px) + 60px); }
   .tour-bar { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 64px); max-width: calc(100% - 24px); overflow-x: auto; }
   .tour-bar button { padding: 0 10px; font-size: 11.5px; }
   .tour-bar .main { min-width: 0; }

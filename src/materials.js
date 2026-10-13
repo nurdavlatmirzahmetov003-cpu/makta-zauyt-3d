@@ -96,7 +96,8 @@ export function mats() {
   beltTex.anisotropy = 8;
   M.belt = std({ map: beltTex, emissiveMap: beltTex, emissive: '#ffffff', emissiveIntensity: 0.35, roughness: 0.7 });
   M.belt.userData.tex = beltTex;
-  night.push([M.glass, 0, 1.25], [M.glowWarm, 0.25, 3.2], [M.glowTeal, 1.6, 2.6], [M.glowGold, 1.2, 2.2]);
+  // The 4th flag marks interior light: it fades when the factory sleeps (contours and signs stay on).
+  night.push([M.glass, 0, 1.25, true], [M.glowWarm, 0.25, 3.2], [M.glowTeal, 1.6, 2.6], [M.glowGold, 1.2, 2.2]);
   return M;
 }
 
@@ -106,9 +107,9 @@ export function registerGlow(mat, day, nightValue) {
 }
 
 /** 0 = day, 1 = full night: windows, lamps, contours and signs glow (driven by Phase 8). */
-export function setNightLevel(k) {
-  for (const [m, d, n] of night) m.emissiveIntensity = d + (n - d) * k;
-  for (const f of nightHooks) f(k);
+export function setNightLevel(k, work = 1) {
+  for (const [m, d, n, interior] of night) m.emissiveIntensity = d + (n - d) * k * (interior ? 0.22 + 0.78 * work : 1);
+  for (const f of nightHooks) f(k, work);
 }
 
 /** Run `f(k)` whenever the night level changes. */

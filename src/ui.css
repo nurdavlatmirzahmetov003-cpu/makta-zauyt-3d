@@ -82,7 +82,7 @@ body.night {
 .dock {
   position: fixed;
   left: max(12px, env(safe-area-inset-left));
-  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  top: calc(var(--top-b, 68px) + 14px);
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -122,7 +122,7 @@ body.night {
 .card {
   position: fixed;
   right: max(12px, env(safe-area-inset-right));
-  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  top: calc(var(--top-b, 68px) + 14px);
   width: min(360px, calc(100% - 24px));
   max-height: calc(100% - 220px);
   overflow-y: auto;
@@ -186,7 +186,7 @@ body.night .pill { background: rgba(255, 255, 255, 0.06); }
 .list {
   position: fixed;
   left: calc(max(12px, env(safe-area-inset-left)) + 252px);
-  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  top: calc(var(--top-b, 68px) + 14px);
   width: min(360px, calc(100% - 24px));
   max-height: calc(100% - 220px);
   display: flex;
@@ -211,7 +211,7 @@ body.night .pill { background: rgba(255, 255, 255, 0.06); }
 .features {
   position: fixed;
   left: 50%;
-  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  top: calc(var(--top-b, 68px) + 14px);
   transform: translateX(-50%);
   width: min(980px, calc(100% - 24px));
   max-height: calc(100% - 210px);
@@ -314,7 +314,7 @@ body.night .pill { background: rgba(255, 255, 255, 0.06); }
 .toast {
   position: fixed;
   left: 50%;
-  top: calc(max(12px, env(safe-area-inset-top)) + 80px);
+  top: calc(var(--top-b, 68px) + 24px);
   transform: translate(-50%, -10px);
   padding: 10px 18px;
   font-weight: 600;
@@ -353,7 +353,7 @@ body.night .pill { background: rgba(255, 255, 255, 0.06); }
 body.night .label3d { background: rgba(14, 26, 32, 0.75); color: #bff9ef; }
 
 /* ---------- Debug overlay ---------- */
-.debug-hud { position: fixed; left: 50%; transform: translateX(-50%); top: 84px; z-index: 50; padding: 6px 10px; border-radius: 10px; background: rgba(31, 42, 48, 0.8); color: #9ffcef; font: 600 12px/1.4 ui-monospace, monospace; pointer-events: none; white-space: pre; }
+.debug-hud { position: fixed; left: 50%; transform: translateX(-50%); top: calc(var(--top-b, 68px) + 16px); z-index: 50; padding: 6px 10px; border-radius: 10px; background: rgba(31, 42, 48, 0.8); color: #9ffcef; font: 600 12px/1.4 ui-monospace, monospace; pointer-events: none; white-space: pre; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1440px) { .brand-text em { display: none; } }
@@ -367,7 +367,7 @@ body.night .label3d { background: rgba(14, 26, 32, 0.75); color: #bff9ef; }
   .counters { width: 100%; margin-left: 0; }
   .counter { padding: 4px 8px; }
   /* Menu button under the top bar, so the info card (bottom sheet) never covers it. */
-  .dock { top: calc(max(12px, env(safe-area-inset-top)) + 112px); bottom: auto; max-height: calc(100% - 250px); z-index: 2; }
+  .dock { top: calc(var(--top-b, 110px) + 12px); bottom: auto; max-height: calc(100% - 250px); z-index: 2; }
   .dock-toggle { display: flex; }
   .dock.open { background: var(--ui-glass-strong); }
   .dock.open ~ .card, .dock.open ~ .list { visibility: hidden; }

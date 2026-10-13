@@ -55,46 +55,50 @@ export function createQuality(renderer, world, { onAuto } = {}) {
   };
 }
 
-export const TIMES = {
-  day: { el: 38, az: 232, night: 0 },
-  sunset: { el: 2.5, az: 258, night: 0.45 },
-  night: { el: -14, az: 250, night: 1 },
-  golden: { el: 6, az: 252, night: 0.15 }, // tour finale panorama (not in the dock cycle)
-};
+// Phase 10: the light follows the simulation clock. The dock buttons jump the clock instead.
+export const TIME_JUMPS = { day: 12 * 60, sunset: 19 * 60 + 30, night: 23 * 60, golden: 19 * 60 + 10 };
+const RISE = 6 * 60, SET = 19 * 60 + 55;
 
-export function createTimeOfDay(world) {
-  const cur = { ...TIMES.day };
-  let from = null, to = null, t = 1, pm = 0, mode = 'day';
+/** Sun elevation / azimuth (degrees) for a time of day in minutes. Azimuth from north, clockwise. */
+export function sunAt(m) {
+  if (m >= RISE && m <= SET) {
+    const u = (m - RISE) / (SET - RISE);
+    return { el: 56 * Math.sin(Math.PI * u), az: 95 + 170 * u };
+  }
+  const v = (((m - SET) % 1440) + 1440) % 1440 / (1440 - (SET - RISE));
+  return { el: -24 * Math.sin(Math.PI * v), az: 265 + 190 * v };
+}
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const modeAt = (m) => (m >= 21 * 60 + 30 || m < 5 * 60 + 30 ? 'night' : m >= 18 * 60 + 30 || m < 6 * 60 + 30 ? 'sunset' : 'day');
+
+export function createTimeOfDay(world, clock, { getWork = () => 1 } = {}) {
+  let mode = modeAt(clock.minutes), night = 0, lastEnv = null, envT = 9, emitted = -1;
   const listeners = [];
-  const emit = () => { for (const f of listeners) f(mode, cur.night); };
+  const emit = () => { for (const f of listeners) f(mode, night); };
+  function apply(realDt, force = false) {
+    const { el, az } = sunAt(clock.minutes);
+    night = 1 - smooth(-5, 8, el);
+    setNightLevel(night, getWork());
+    envT += realDt;
+    // Light and shadows move every frame; the PMREM reflections only when the sky changed enough.
+    const needEnv = force || !lastEnv || ((Math.abs(el - lastEnv.el) > 0.8 || Math.abs(az - lastEnv.az) > 4) && envT > 0.3);
+    world.env.setSun(el, az, { env: needEnv });
+    if (needEnv) { lastEnv = { el, az }; envT = 0; }
+    const m = modeAt(clock.minutes);
+    if (m !== mode || Math.abs(night - emitted) > 0.02) { mode = m; emitted = night; emit(); }
+  }
   return {
     get mode() { return mode; },
-    get night() { return cur.night; },
+    get night() { return night; },
     onChange(f) { listeners.push(f); },
-    set(m) {
-      if (!TIMES[m]) return;
-      mode = m;
-      from = { ...cur };
-      to = TIMES[m];
-      t = 0;
-      emit();
-    },
+    set(m) { if (TIME_JUMPS[m] != null) clock.jumpTo(TIME_JUMPS[m]); },
     cycle() {
       const order = ['day', 'sunset', 'night'];
-      this.set(order[(Math.max(0, order.indexOf(mode)) + 1) % 3]);
+      this.set(order[(order.indexOf(mode) + 1) % 3]);
     },
-    update(dt) {
-      if (t >= 1 || !to) return;
-      t = Math.min(1, t + dt / 2.5);
-      const u = t * t * (3 - 2 * t);
-      cur.el = from.el + (to.el - from.el) * u;
-      cur.az = from.az + (to.az - from.az) * u;
-      cur.night = from.night + (to.night - from.night) * u;
-      setNightLevel(cur.night);
-      pm += dt;
-      // The PMREM environment is regenerated only a few times during the blend.
-      if (pm > 0.22 || t >= 1) { pm = 0; world.env.setSun(cur.el, cur.az); }
-      emit();
-    },
+    /** Tour finale: jump to golden hour, but only forward within the same working day. */
+    golden() { const m = clock.minutes; if (m > 7 * 60 && m < 19 * 60) clock.jumpTo(TIME_JUMPS.golden); },
+    update(realDt) { apply(realDt); },
+    init() { apply(0, true); },
   };
 }

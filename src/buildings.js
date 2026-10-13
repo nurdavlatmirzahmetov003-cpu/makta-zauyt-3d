@@ -78,10 +78,10 @@ class RoofProps {
     this.housings.computeBoundingSphere();
     this.blades.computeBoundingSphere();
   }
-  update(dt) {
+  update(dt, powerOf = null) {
     const d = this.dummy;
     this.flist.forEach((f, i) => {
-      f.a += f.v * dt;
+      f.a += f.v * dt * (powerOf ? powerOf(f.owner) : 1); // fans spin up / down with the shift
       const s = f.s || 1e-4;
       d.position.set(f.x, f.y, f.z);
       d.scale.set(s, s, s);
@@ -399,8 +399,9 @@ export function buildBuildings(scene, signs, specials = {}) {
   return {
     list,
     props,
-    update(dt) {
-      props.update(dt);
+    /** `dt` real time (roof fades), `fanDt` sim time for the rooftop fans, `powerOf(id)` 0…1. */
+    update(dt, fanDt = dt, powerOf = null) {
+      props.update(fanDt, powerOf);
       for (const b of list.values()) b.update?.(dt);
     },
   };

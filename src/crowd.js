@@ -23,6 +23,8 @@ function groundY(x, z) {
   return 0.05;
 }
 const FAR = 260;
+/** Inside the robot centre (row T, x −270…−220, z −68…−22): indoor floor height. */
+const inRobotCentre = (x, z) => x > -270 && x < -220 && z < -22.2 && z > -68;
 
 /* ---------------- Humanoids (instanced body parts) ---------------- */
 
@@ -34,8 +36,12 @@ function people() {
   const P = [];
   const walk = (pts, opts = {}) => P.push({ pts: pts.map(([x, z]) => V(x, z)), ...opts });
   // Robots walking between the production rows and the canteen (cross S2 at the zebra).
-  const canteen = [[-245, -17.8], [-273.5, -17.8], [-273.5, -2.2], [-208, -2.2], [-208, 30], [-210, 44]];
-  for (let i = 0; i < 6; i++) walk(canteen, { role: 'worker', vest: i % 2 ? 'lime' : 'orange', start: i / 6 });
+  // Each worker sleeps on a charging spot inside the robot centre and walks out through its east door.
+  const canteen = [[-233.2, -26], [-233.2, -17.8], [-273.5, -17.8], [-273.5, -2.2], [-208, -2.2], [-208, 30], [-210, 44]];
+  for (let i = 0; i < 6; i++) {
+    const rest = [-239.5 + (i % 3) * 2.3, -29.5 - Math.floor(i / 3) * 2.6];
+    walk([rest, ...canteen], { role: 'worker', vest: i % 2 ? 'lime' : 'orange', start: 0.25 + i / 9, workFrom: 2 });
+  }
   // Engineers with tablets: administration ↔ showroom over the roundabout zebra.
   const eng = [[-90, 87], [-24, 69], [24, 69], [62, 80], [90, 93]];
   for (let i = 0; i < 4; i++) walk(eng, { role: 'engineer', vest: 'teal', pose: 'tablet', start: i / 4 });
@@ -93,7 +99,7 @@ function buildHumanoids(scene) {
     pelvis: [new THREE.BoxGeometry(0.36, 0.16, 0.22), body, 1],
     head: [new THREE.SphereGeometry(0.13, 16, 12).scale(1, 1.1, 1), body, 1],
     helmet: [new THREE.SphereGeometry(0.155, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.9, 1.1), std({ color: '#ffffff' }), 1],
-    visor: [new THREE.BoxGeometry(0.21, 0.06, 0.05), glow(PALETTE.teal), 1],
+    visor: [new THREE.BoxGeometry(0.21, 0.06, 0.05), glow('#ffffff'), 1],
     vest: [new THREE.BoxGeometry(0.5, 0.34, 0.3), new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false }), 1],
     upperArm: [new THREE.CapsuleGeometry(0.055, 0.22, 3, 8).translate(0, -0.15, 0), body, 2],
     lowerArm: [new THREE.CapsuleGeometry(0.048, 0.22, 3, 8).translate(0, -0.15, 0), body, 2],
@@ -130,7 +136,14 @@ function buildHumanoids(scene) {
     p.pos = p.pts[0].clone();
     p.yawNow = p.yaw ?? 0;
     p.speed = p.speed ?? 1.25;
+    p.lo = p.workFrom && p.path ? p.path.cum[p.workFrom] : 0; // normal work range starts here
+    p.sleeps = !['security', 'greeter'].includes(p.role);
+    p.resting = false;
+    if (p.path) for (const v of p.pts) if (inRobotCentre(v.x, v.z)) v.y = 0.16;
   });
+  for (let i = 0; i < N; i++) im.visor.setColorAt(i, col.set(PALETTE.teal));
+  const visorCol = new THREE.Color(PALETTE.teal);
+  let sched = { sleep: false, lunch: false };
 
   // Matrix helpers (root → joints).
   const M = new THREE.Matrix4(), T = new THREE.Matrix4(), R = new THREE.Matrix4(), A = new THREE.Matrix4(), B = new THREE.Matrix4();
@@ -182,7 +195,10 @@ function buildHumanoids(scene) {
   const write = (t, camera) => {
     let nb = 0, nt = 0, nc = 0;
     list.forEach((p, i) => {
-      if (!(camera && camera.position.distanceTo(p.pos) > FAR && p.drawn)) pose(p, i, t, !!p.path);
+      if (!(camera && camera.position.distanceTo(p.pos) > FAR && p.drawn)) pose(p, i, t, !!p.path && !p.resting);
+      // Sleeping robots: the visor dims to a slow "breathing" glow.
+      const b = p.resting && sched.sleep ? 0.18 + 0.16 * (1 + Math.sin(t * 1.6 + i)) : 1;
+      if (p.visorB !== b) { p.visorB = b; im.visor.setColorAt(i, col.copy(visorCol).multiplyScalar(b)); im.visor.instanceColor.needsUpdate = true; }
       p.drawn = true;
       e.set(0, p.yawNow, 0);
       q.setFromEuler(e);
@@ -197,19 +213,36 @@ function buildHumanoids(scene) {
 
   write(0, null);
   for (const m of Object.values(im)) if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  /** Where the day cycle sends this robot (s along its path), or null for its normal routine. */
+  const goal = (p) => {
+    if (sched.sleep && p.sleeps) return 0;
+    if (sched.lunch && p.role === 'worker') return p.path.length;
+    return null;
+  };
   return {
     list,
-    update(dt, t, camera) {
+    setSchedule(s) { sched = s; },
+    update(dt, t, camera, render = true) {
       for (const p of list) {
-        if (!p.path) continue;
+        if (!p.path) { p.resting = sched.sleep && p.sleeps; continue; }
         if (camera.position.distanceTo(p.pos) > FAR) continue; // far away: freeze
-        const L = p.path.length;
-        p.s += p.dir * p.speed * dt;
-        if (p.loop) p.s = ((p.s % L) + L) % L;
-        else if (p.s > L) { p.s = L; p.dir = -1; }
-        else if (p.s < 0) { p.s = 0; p.dir = 1; }
+        const L = p.path.length, g = goal(p);
+        if (g !== null) {
+          // Walk (never teleport) to the dock / canteen and rest there.
+          const ds = g - p.s;
+          p.resting = Math.abs(ds) < 0.05;
+          if (!p.resting) { p.dir = Math.sign(ds); p.s += p.dir * Math.min(Math.abs(ds), p.speed * dt); }
+        } else {
+          p.resting = false;
+          p.s += p.dir * p.speed * dt;
+          if (p.loop) p.s = ((p.s % L) + L) % L;
+          else if (p.s > L) { p.s = L; p.dir = -1; }
+          else if (p.s < p.lo && p.dir < 0) { p.s = p.lo; p.dir = 1; }
+          else if (p.s < 0) { p.s = 0; p.dir = 1; }
+        }
+        if (p.resting) continue;
         p.path.at(p.s, p.pos);
-        p.pos.y = p.indoor ? 0.16 : groundY(p.pos.x, p.pos.z);
+        p.pos.y = p.indoor || inRobotCentre(p.pos.x, p.pos.z) ? 0.16 : groundY(p.pos.x, p.pos.z);
         p.path.dirAt(p.s, dir);
         const target = Math.atan2(dir.x * p.dir, dir.z * p.dir);
         let d = target - p.yawNow;
@@ -217,7 +250,7 @@ function buildHumanoids(scene) {
         p.yawNow += d * Math.min(1, dt * 6);
         p.phase += dt * p.speed * 5.2;
       }
-      write(t, camera);
+      if (render) write(t, camera);
     },
   };
 }
@@ -261,6 +294,7 @@ const DRONE_LOOPS = [
 
 /* ---------------- Assembly ---------------- */
 export function buildRobots(scene, site) {
+  let sched = { sleep: false, lunch: false, power: 1 };
   const humans = buildHumanoids(scene);
   const drones = DRONE_LOOPS.map((f, i) => { const d = makeDrone(); d.userData.f = f; d.userData.t = i * 1.3; d.userData.speed = 0.05 + i * 0.006; scene.add(d); return d; });
 
@@ -304,9 +338,11 @@ export function buildRobots(scene, site) {
   return {
     humans, drones, amrs,
     counts: { humanoids: humans.list.length, drones: drones.length, amrs: amrs.length, extraArms: bays.length },
-    update(dt, camera) {
+    /** Day cycle input: { sleep, lunch, power }. */
+    setSchedule(s) { sched = s; humans.setSchedule(s); },
+    update(dt, camera, write = true) {
       t += dt;
-      humans.update(dt, t, camera);
+      humans.update(dt, t, camera, write);
       for (const d of drones) {
         const u = d.userData;
         u.t += dt * u.speed;
@@ -317,12 +353,13 @@ export function buildRobots(scene, site) {
         for (const r of u.rotors) r.rotation.y += dt * 40;
       }
       for (const A of amrs) {
-        A.u = (A.u + dt * A.speed) % 2;
+        A.u = (A.u + dt * A.speed * sched.power) % 2;
         const k = A.u < 1 ? A.u : 2 - A.u;
         A.a.position.set(A.x0 + (A.x1 - A.x0) * k, 0.03, A.z);
         A.a.rotation.y = A.u < 1 ? Math.PI / 2 : -Math.PI / 2;
       }
-      for (const { arm, b } of bays) if (b.interior.visible) arm.update(dt, 0.8);
+      // Robot-centre maintenance bays work around the clock; the repair shop follows the shift.
+      for (const { arm, b } of bays) if (b.interior.visible) arm.update(dt * (b.id === 'robots' ? 1 : sched.power), 0.8);
     },
   };
 }

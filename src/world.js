@@ -107,7 +107,7 @@ export function createEnvironment(renderer, scene, { shadowMapSize = 2048 } = {}
    * Place the sun (degrees). Elevation < 0 is night. Regenerates the PMREM, so call it only
    * when the time of day changes (Phase 8 blends between presets).
    */
-  function setSun(elevation = 42, azimuth = 205) {
+  function setSun(elevation = 42, azimuth = 205, { env = true } = {}) {
     const el = THREE.MathUtils.degToRad(elevation), az = THREE.MathUtils.degToRad(azimuth);
     // Azimuth from north (−Z), clockwise towards east (+X).
     sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
@@ -142,6 +142,8 @@ export function createEnvironment(renderer, scene, { shadowMapSize = 2048 } = {}
     stars.material.opacity = 1 - smoothstep(-8, 3, elevation);
     stars.visible = stars.material.opacity > 0.01;
 
+    // The PMREM reflections are regenerated only on request (the day cycle throttles it).
+    if (!env) return;
     envRT?.dispose();
     envRT = pmrem.fromScene(envScene, 0, 0.1, 200);
     scene.environment = envRT.texture;
@@ -154,5 +156,5 @@ export function createEnvironment(renderer, scene, { shadowMapSize = 2048 } = {}
     }
   }
 
-  return { sky, sun, hemi, stars, clouds, setSun, setShadowFocus, update, sunDir };
+  return { sky, sun, hemi, stars, clouds, setSun, setShadowFocus, update, sunDir, moonDir: MOON_DIR };
 }

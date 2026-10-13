@@ -463,6 +463,8 @@ export function buildTraffic(scene, { production, gate }) {
       semi.place();
     },
     /** Send the held semi out to export (slightly faster than normal traffic). */
+    /** Evening: let the semi leave with whatever is loaded (the last export of the day). */
+    flushExport() { if (semi.wait > 0) palletReady = true; },
     releaseSemi(cruise = 10) {
       if (semi.wait > 0) semi.wait = 0.001;
       semi.cruise = cruise;
@@ -479,7 +481,9 @@ export function buildTraffic(scene, { production, gate }) {
 function step(v, dt, obs) {
   if (v.hidden > 0) {
     v.hidden -= dt;
-    if (v.hidden <= 0) { v.s = 0; v.stopIdx = 0; v.v = 0; v.onRespawn?.(); v.model.visible = true; if (v.trailer) v.trailer.visible = true; }
+    // Night: trips only start while the schedule allows them (the vehicle waits off-site).
+    if (v.hidden <= 0 && v.canRespawn && !v.canRespawn()) v.hidden = 0.5;
+    else if (v.hidden <= 0) { v.s = 0; v.stopIdx = 0; v.v = 0; v.onRespawn?.(); v.model.visible = true; if (v.trailer) v.trailer.visible = true; }
     return;
   }
   const L = v.path.length;
@@ -490,6 +494,7 @@ function step(v, dt, obs) {
     if (v.wait <= 0 || (stop?.until && stop.until() && v.wait < stop.wait - 8)) {
       v.wait = 0;
       stop?.depart?.();
+      v.onDepart?.(stop);
       v.stopIdx++;
       if (v.path.closedLoop && v.stopIdx >= v.stops.length) v.stopIdx = 0;
     }
@@ -535,7 +540,7 @@ function step(v, dt, obs) {
   v.s += v.v * dt;
   if (v.s >= L) {
     if (v.path.closedLoop) { v.s -= L; v.stopIdx = 0; }
-    else { v.hidden = v.respawn; v.model.visible = false; if (v.trailer) v.trailer.visible = false; return; }
+    else { v.hidden = v.respawn; v.model.visible = false; if (v.trailer) v.trailer.visible = false; v.onExit?.(); return; }
   }
   v.place();
   spin(v, v.v, dt);
