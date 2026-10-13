@@ -46,6 +46,7 @@ export const LOADING_SITE = {
   landmarks: 'Әкімшілік пен көрме залы безендірілуде…',
   gate: 'Бас қақпа мен қоршау орнатылуда…',
   production: 'Өндіріс желілері іске қосылуда…',
+  vehicles: 'Электр көліктер жолға шығуда…',
 };
 
 /* ===================== Site plan (Phase 3) =====================
@@ -127,6 +128,15 @@ export const STATION_TEXT = {
   cleanAir: 'ТАЗА АУА',
   aiScan: 'ЖИ САПА СКАНЕРІ',
 };
+
+// Vehicle livery and robot badges (Phase 5).
+export const VEHICLE_TEXT = {
+  trailer: 'АҚ МАРЖАН · ЭКСПОРТ',
+  cotton: 'ШИКІ МАҚТА',
+  oil: 'МАҚТА МАЙЫ',
+  bus: 'АҚ МАРЖАН',
+};
+export const ROBOT_TEXT = { security: 'КҮЗЕТ' };
 
 // Main gate and monument texts.
 export const GATE_TEXT = {

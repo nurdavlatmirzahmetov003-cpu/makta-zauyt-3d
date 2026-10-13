@@ -8,8 +8,8 @@
 | 2 — Nature & environment | ✅ done |
 | 3 — Buildings, roads, fence, gate | ✅ done |
 | 4 — Interior production line & flow | ✅ done |
-| 5 — Robots & vehicles | ⏳ next |
-| 6 — UI & interactivity | — |
+| 5 — Robots & vehicles | ✅ done |
+| 6 — UI & interactivity | ⏳ next |
 | 7 — 360° tour | — |
 | 8 — Lighting, polish, performance | — |
 | 9 — Final QA & publishing | — |
@@ -94,17 +94,46 @@ Deviations from the brief (deliberate):
 - Budget: ~230 draw calls with roofs closed; **698 with every roof open** (worst case). No console errors.
 - Screenshots: `screenshots/p4-tubes.png`, `p4-ginning.png`, `p4-fibre.png`, `p4-oil.png`, `p4-textile.png`, `p4-logistics.png`, `p4-bridge.png`, `p4-sewing.png`.
 
+## Phase 5 — done
+- `src/vehicles.js`:
+  - `lanePath(waypoints, {closed, radius})` builds right-hand lanes from centreline waypoints with a per-segment lane offset; corners are intersections of the offset lines, rounded with tangent length R·tan(θ/2). `nearestS()` finds stop positions.
+  - Routes (`ROUTES`):
+    - cotton: highway → gate → avenue (northbound passes east of the roundabout) → S2 → W → **intake dock on the LED weighbridge** → N → E → S1 → avenue → gate → highway;
+    - semi: S1 → E → S2 → **dispatch dock** → avenue → gate → **export** (west);
+    - tanker: N street → **tank gantry** → E → S1 → out;
+    - bale truck + drawbar trailer;
+    - closed service loop (S2/E/S3/W) with 3 cars;
+    - closed minibus loop with stops at the **bus stop by the administration** and in the staff car park.
+  - Models: cotton truck (cage + cotton heap that shrinks while unloading), bale truck, semi tractor + **articulated box trailer** «АҚ МАРЖАН · ЭКСПОРТ» (tractor and trailer follow the path separately), tank trailer, drawbar bale trailer, compact car, minibus with livery. All are electric with a lidar dome, unlit glowing head/tail lights, and wheels spinning with speed.
+  - Traffic:
+    - forward cone of 14 m + 1.6·v, ±3.2 m lateral, with smooth braking;
+    - queues behind vehicles waiting at a stop;
+    - **deadlock breaker** after 6 s blocked (not when queuing);
+    - slows for curves, the roundabout (4.5 m/s) and the site speed limit (6.5 m/s; 14 m/s on the highway);
+    - smooth stops; respawn after leaving.
+  - Cotton trucks call `production.setTruckAtDock(true, onUnload)`, so the intake feed rises to every 2.2 s and the heap shrinks; the semi leaves on `production.hooks.onPalletFull` (or after 75 s). `gate.update(dt, vehicles)` lifts the barriers.
+  - **11 parked vehicles**: 5 trucks at the truck parking (EV chargers) and 6 cars in the staff car park.
+- `src/crowd.js`:
+  - **32 humanoid robots**, drawn as instanced body parts (10 meshes for all of them): white body, glowing teal visor, helmet, glowing hi-vis vest. Walk cycle with alternating legs and arms, knee bend and body bob.
+  - Roles: 6 canteen walkers (north S2 sidewalk → **W×S2 zebra** → south sidewalk → canteen door), 4 engineers with tablets (admin ↔ showroom over the **roundabout zebra**), 3 security robots (navy, gold vests, glowing «КҮЗЕТ» badge), 1 greeter waving at the gate, 3 shop visitors, 2 lab robots, 6 operators on the station platforms, 3 warehouse robots carrying cartons, 4 robots on charging pads at the robot centre.
+  - Robots stand on the walking surface (sidewalk 0.2 / road 0.07 / ground 0.05 / indoor 0.16). Animation is skipped beyond 260 m from the camera.
+  - **6 drones** (spinning rotors, teal ring) on inspection loops: solar farms, rooftops, tank farm, cotton fields, fence perimeter.
+  - **8 outdoor AMRs** in the O–F yard, plus **14 extra arms** in the robot centre and the repair workshop. Totals: ~39 arms, ~12 AMRs/forklifts, 6 drones.
+- Budget: **355 draw calls** with roofs closed. No console errors.
+- Screenshots: `screenshots/p5-intake.png` (truck unloading on the weighbridge), `p5-semi.png` (semi at the dispatch dock), `p5-gate-robots.png` (greeter + security), `p5-overview.png`.
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
 - Main JS chunk ~500 kB (Three.js); fine for now.
 - Night mode is only a preview (`?debug` → `__app.world.env.setSun(-10)` + `__app.setNightLevel(1)`); smooth blending, bloom and lamp light pools come in Phase 8.
 - Opened-roof clones keep the emissive level from the moment of opening.
-- Without trucks (Phase 5) the factory runs on the 6 s buffer, so belts hold ~100 products. While a truck is docked the feed rises to every 2.2 s.
+- Vehicles do not yield to robots on zebras (robots only cross at zebras, but traffic does not stop for them).
+- Headless SwiftShader runs at a few FPS, so screenshot tests fast-forward the simulation with `world.traffic.update(0.1)` in `--eval`.
 - Stations are fairly sparse at aerial distance; they read best from the tour's orbit distance (Phase 7). Machines could be scaled up further if needed.
 - Headless Chromium (SwiftShader) renders this scene at well under 1 FPS, so a timed screenshot of the 7 s flight lands at its end; use `intro.peek(u)` to inspect flight frames. Real FPS must be checked on the iPad (Phase 8).
 - Lake water uses PMREM reflections only (no planar reflection pass, to protect iPad FPS); the «Жоғары» preset could add `Water.js` reflections in Phase 8.
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Phase 5 — robots and vehicles: humanoid robots (walk cycle, roles, sidewalk paths, `ZEBRAS` from roads.js), more arms/AMRs/drones, and electric autonomous vehicles on `lanePath` routes. The cotton truck must call `production.setTruckAtDock(true, onUnload)` at the intake dock (W street, x ≈ −281.6, weighbridge). The semi truck loads at the dispatch docks (S2) and leaves on `production.hooks.onPalletFull`. Barriers: `gate.update(dt, vehicles)`.
+Phase 6 — interface (top bar with live counters, left dock, picking with outline + info card, searchable lists incl. following a vehicle (`world.traffic.vehicles`), labels, bottom 17-stage timeline + fact ticker, dark night theme).
