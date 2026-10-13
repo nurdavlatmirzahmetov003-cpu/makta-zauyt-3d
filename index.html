@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="kk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#12b5a0" />
+    <meta name="description" content="Иқанның Ақ Маржаны — 2040 жылғы түтінсіз мақта өңдеу өнеркәсіптік кешенінің интерактивті 3D прототипі." />
+    <title>Иқанның Ақ Маржаны — болашақтың мақта зауыты</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2312b5a0'/%3E%3Cstop offset='1' stop-color='%23f5c04a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 50 L32 58 M22 52 Q32 46 42 52' stroke='%230b6b63' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='22' r='10' fill='%23fffaf0'/%3E%3Ccircle cx='21' cy='32' r='10' fill='%23fffaf0'/%3E%3Ccircle cx='43' cy='32' r='10' fill='%23fffaf0'/%3E%3Ccircle cx='32' cy='38' r='10' fill='%23fffaf0'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="landing">
+      <div class="landing-card">
+        <div class="eyebrow">2040 · БОЛАШАҚТЫҢ ЗАУЫТЫ</div>
+        <h1 class="title">Иқанның Ақ Маржаны</h1>
+        <p class="subtitle">Болашақтың түтінсіз мақта зауытын бірге тамашалайық!</p>
+        <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+        <div class="progress-msg" id="progress-msg">Жүктелуде…</div>
+        <button class="cta" id="enter-btn" disabled>ЗАУЫТҚА САЯХАТ ⟶</button>
+      </div>
+    </div>
+    <canvas id="c"></canvas>
+    <div id="ui" hidden>
+      <div class="ui-chip">ИҚАННЫҢ АҚ МАРЖАНЫ — МАҚТА ӨҢДЕУ ӨНЕРКӘСІПТІК КЕШЕНІ</div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
