@@ -30,6 +30,15 @@ export const LOADING_STEPS = [
   'Конвейерлер іске қосылуда…',
 ];
 
+// Extra loading messages for the nature steps (Phase 2).
+export const LOADING_NATURE = {
+  sky: 'Аспан мен күн дайындалуда…',
+  terrain: 'Таулар мен төбелер көтерілуде…',
+  lake: 'Көл суға толтырылуда…',
+  trees: 'Ағаштар отырғызылуда…',
+  wind: 'Жел турбиналары іске қосылуда…',
+};
+
 export const PALETTE = {
   cotton: '#fffaf0',
   teal: '#12b5a0',

@@ -4,14 +4,16 @@ import * as THREE from 'three';
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Camera path (metres). The gate sign sits at z = 240 facing south (+Z).
+// Clearance over terrain was checked numerically (≥ 11 m everywhere, ~350 m over the peaks).
 const PATH = [
-  [-1350, 560, -620],
-  [-980, 330, -260],
-  [-640, 120, 40],   // descending towards the west cotton fields
-  [-470, 58, 180],   // skimming over the fields
-  [-260, 40, 330],
-  [-80, 20, 330],
-  [0, 11, 292],      // in front of the gate
+  [-1500, 900, -1700], // high above the snowy ridge (north-west)
+  [-1150, 520, -900],  // over the foothill forest
+  [-820, 200, -250],
+  [-560, 60, 40],      // descending towards the west cotton fields
+  [-440, 28, 150],     // skimming over the harvester's parcel
+  [-250, 34, 330],     // over the poplar-lined highway
+  [-80, 18, 330],
+  [0, 11, 292],        // in front of the gate
 ];
 export const GATE_TARGET = new THREE.Vector3(0, 8.5, 240);
 export const GATE_VIEW = new THREE.Vector3(...PATH[PATH.length - 1]);
@@ -60,6 +62,13 @@ export function createIntro(camera, controls, { duration = 7 } = {}) {
       t0 = -1;
     },
     skip() { if (active) finish(); },
+    /** Debug: freeze the camera at path parameter u (0..1), e.g. for screenshots. */
+    peek(u) {
+      active = false;
+      pose(u);
+      controls.target.copy(look);
+      controls.update();
+    },
     update(now) {
       if (!active) return;
       if (t0 < 0) t0 = now;

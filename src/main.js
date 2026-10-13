@@ -2,8 +2,13 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import './style.css';
 import { fontsReady, debugFontCheck } from './fonts.js';
-import { TEXT, LOADING_STEPS, PALETTE } from './data.js';
-import { makeSignTexture } from './textures.js';
+import { TEXT, LOADING_STEPS, LOADING_NATURE, PALETTE } from './data.js';
+import { makeSignTexture, grassDetailTexture } from './textures.js';
+import { createEnvironment } from './world.js';
+import { buildTerrain } from './terrain.js';
+import { buildTrees, buildShrubsAndFlowers, buildLake } from './nature.js';
+import { buildFields } from './fields.js';
+import { buildSolarFarms, buildWindTurbines } from './energy.js';
 import { createLanding } from './landing.js';
 import { createIntro, GATE_TARGET } from './intro.js';
 
@@ -31,7 +36,7 @@ controls.target.copy(GATE_TARGET);
 controls.enableDamping = true;
 controls.maxPolarAngle = Math.PI * 0.48; // never below the ground
 controls.minDistance = 8;
-controls.maxDistance = 400;
+controls.maxDistance = 1400;
 controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 
 // Prevent Safari double-tap zoom / pinch-zoom on the page.
@@ -79,48 +84,12 @@ const landing = createLanding({
   },
 });
 
-function buildSky() {
-  // Simple gradient sky dome (replaced by Sky.js in Phase 2).
-  const geo = new THREE.SphereGeometry(7000, 32, 16);
-  const mat = new THREE.ShaderMaterial({
-    side: THREE.BackSide,
-    depthWrite: false,
-    uniforms: {
-      top: { value: new THREE.Color('#5fb4f0') },
-      horizon: { value: new THREE.Color('#e8f6ff') },
-    },
-    vertexShader: 'varying vec3 vP; void main(){ vP = (modelMatrix*vec4(position,1.)).xyz; gl_Position = projectionMatrix*viewMatrix*vec4(vP,1.); }',
-    fragmentShader: 'uniform vec3 top; uniform vec3 horizon; varying vec3 vP; void main(){ float h = clamp(normalize(vP).y*1.6,0.,1.); gl_FragColor = vec4(mix(horizon, top, h),1.); }',
-  });
-  scene.add(new THREE.Mesh(geo, mat));
-  scene.fog = new THREE.FogExp2('#dff1fb', 0.0011);
-}
-
-function buildLights() {
-  scene.add(new THREE.HemisphereLight('#dff4ff', '#6f8f5a', 1.1));
-  const sun = new THREE.DirectionalLight('#fff4e0', 2.6);
-  sun.position.set(GATE_TARGET.x + 40, 60, GATE_TARGET.z + 25);
-  sun.target.position.copy(GATE_TARGET);
-  scene.add(sun.target);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -60, right: 60, top: 60, bottom: -60, near: 1, far: 200 });
-  sun.shadow.bias = -0.0005;
-  scene.add(sun);
-}
-
-function buildGround() {
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(14000, 14000), // temporary; replaced by fbm terrain in Phase 2
-    new THREE.MeshStandardMaterial({ color: '#8fbf6a', roughness: 0.95 }),
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
-}
+// Updatable parts of the world (filled by the build steps).
+const world = { env: null, lake: null, fields: null, wind: null };
 
 let testBoll;
-function buildTestObject() {
+function buildGateStandIn() {
+  // Temporary cotton boll + sign at the gate position (replaced by the real gate in Phase 3).
   const group = new THREE.Group();
   const pedestal = new THREE.Mesh(
     new THREE.CylinderGeometry(3.2, 3.6, 1.2, 48),
@@ -174,11 +143,20 @@ function buildTestSign() {
 async function init() {
   // Real loading progress: each scene-building step reports when it completes.
   const steps = [
-    [LOADING_STEPS[0], buildSky],
-    [LOADING_STEPS[1], buildLights],
-    [LOADING_STEPS[2], buildGround],
-    [LOADING_STEPS[3], buildTestObject],
-    [LOADING_STEPS[3], buildTestSign],
+    [LOADING_NATURE.sky, () => {
+      world.env = createEnvironment(renderer, scene);
+      world.env.setSun(38, 232); // afternoon sun from the WSW: side light gives the mountains form
+    }],
+    [LOADING_NATURE.terrain, () => scene.add(buildTerrain(grassDetailTexture()))],
+    [LOADING_NATURE.lake, () => { world.lake = buildLake(scene); }],
+    [LOADING_STEPS[2], () => { world.fields = buildFields(scene); }],
+    [LOADING_NATURE.trees, () => {
+      const t = buildTrees(scene), s = buildShrubsAndFlowers(scene);
+      if (DEBUG) console.info('[world] trees', t.count, 'shrubs', s.shrubs, 'beds', s.beds);
+    }],
+    [LOADING_STEPS[0], () => buildSolarFarms(scene)],
+    [LOADING_NATURE.wind, () => { world.wind = buildWindTurbines(scene); }],
+    [LOADING_STEPS[1], () => { buildGateStandIn(); buildTestSign(); }],
   ];
   const total = steps.length + 1;
   landing.progress(0.02, TEXT.loading);
@@ -190,10 +168,17 @@ async function init() {
     await nextFrame();
     steps[i][1]();
     // Let each message be readable even when a step is instant.
-    await new Promise((r) => setTimeout(r, 380));
+    await new Promise((r) => setTimeout(r, 220));
   }
+  landing.progress(1, LOADING_STEPS[3]);
+  await nextFrame();
   renderer.compile(scene, camera);
+  if (DEBUG) {
+    renderer.render(scene, camera);
+    console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
+  }
   landing.ready();
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world };
   window.__sceneReady = true;
 }
 
@@ -204,10 +189,17 @@ addEventListener('resize', () => {
 });
 
 const clock = new THREE.Clock();
+let lastT = 0;
 renderer.setAnimationLoop(() => {
   if (!rendering) return;
   const t = clock.getElapsedTime();
+  const dt = Math.min(0.1, t - lastT);
+  lastT = t;
   intro.update(t);
+  world.env?.update(dt);
+  world.lake?.update(dt);
+  world.fields?.update(dt);
+  world.wind?.update(dt);
   if (testBoll) {
     testBoll.rotation.y = t * 0.3;
     testBoll.position.y = 4 + Math.sin(t * 1.2) * 0.25;

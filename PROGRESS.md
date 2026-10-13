@@ -5,8 +5,8 @@
 |---|---|
 | 0 — Skeleton & deployment | ✅ done |
 | 1 — Landing page | ✅ done |
-| 2 — Nature & environment | ⏳ next |
-| 3 — Buildings, roads, fence, gate | — |
+| 2 — Nature & environment | ✅ done |
+| 3 — Buildings, roads, fence, gate | ⏳ next |
 | 4 — Interior production line & flow | — |
 | 5 — Robots & vehicles | — |
 | 6 — UI & interactivity | — |
@@ -42,12 +42,31 @@
 - `scripts/shot.mjs`: supports several outputs with `--wait=ms,ms`.
 - Screenshots: `screenshots/phase1-landing.png`, `phase1-flight.png`, `phase1-gate.png`.
 
+## Phase 2 — done
+New modules (all procedural, no external assets):
+- `src/noise.js`: seeded `mulberry32`, 2D Perlin, `fbm`, `ridged` (domain rotated between octaves, otherwise ridges align with the lattice diagonals and show as parallel stripes).
+- `src/terrain.js`: `heightAt(x, z)` (pure, reused for placement), 6000 m / 400-segment plane. Flat zones (`ZONES`): plot x ∈ [−300, 300] z ∈ [−262, 240], cotton fields, two solar farms, highway corridor z ∈ [300, 372], gate access road. Rolling fbm hills grow with distance; a ridged mountain ring (r ≈ 1100–3900 m, higher in the north, peaks ≈ 710 m). Lake basin (x 600, z 100, 200×140 m). Vertex colours for grass/lawn/dry grass/shore. Rock and snow are classified **per pixel** in an `onBeforeCompile` patch (world height + slope + value noise), so the snow line is crisp.
+- `src/world.js` `createEnvironment()`: `Sky.js`, sun DirectionalLight (PCFSoft, 2048 map, frustum ±330 via `setShadowFocus(center, radius)` for the tour's ±80 later), HemisphereLight, `scene.environment` = PMREM of the same sky (regenerated only in `setSun()`), FogExp2, 14 drifting cloud sprites (canvas textures), 1 800-star dome (fades in when the sun is below the horizon). `setSun(elevation, azimuth)` also tints the fog/clouds and sets exposure, ready for Phase 8 blending. Default: 38°, az 232° (afternoon WSW light).
+- `src/nature.js`: ~1 100 instanced trees (round, poplar, spruce, willow; 1 shared trunk mesh + 4 crown meshes, sRGB colour variation): a belt hugging the fence, groves, spruce on the foothills, poplar alleys along the highway, alleys inside the fence, willows by the lake. ~560 shrubs, 12 flower beds along the gate access road. Lake: `MeshPhysicalMaterial` with two scrolling procedural normal maps (normal + clearcoat normal) reflecting the PMREM sky. 300 instanced reed clusters on the shore.
+- `src/fields.js`: fields x ∈ [−620, −330]. One parcel has **5 724 instanced plants** (foliage and bolls are separate InstancedMeshes). The others use painted cotton-row and stubble textures over packed-earth tracks. The autonomous **harvester** (lidar dome, 4 gold picker heads, glowing teal strips, glass cab, cotton basket that fills up) drives a serpentine route, 4 rows per pass, with smoothed yaw and spinning wheels. Bolls disappear behind its header; after a full season they grow back over 5 s.
+- `src/energy.js`: 2 solar farms (NW + NE), 800 two-module tables tilted 25° to the south on instanced mounts, 8 battery-storage containers. 6 wind turbines on the hills (merged towers and nacelles, extruded blades, rotors facing SW, spinning), with aviation lights and gold base rings.
+- `src/flow.js`: `Path` class (arc-length `at(s)` / `dirAt(s)`, closed loops) + `arcPoints()`; Phase 4 adds the product flow.
+- `src/geo.js`: `merge` (attribute-normalising `mergeGeometries`), `paint`, `blob` (noise-displaced icosahedron), `place`, `setInstance`.
+- `src/textures.js`: canvas textures: grass grain, soil furrows, cotton rows / stubble, PV cells, clouds, tileable water normal map, flower beds, battery container.
+- Loading steps now follow the real build: sky → mountains → lake → cotton field → trees → solar → wind → robots → shader compile, with Kazakh messages (`LOADING_NATURE` in `data.js` + the 4 original messages).
+- Intro flight re-tuned: from 900 m above the NW ridge, over the foothill forest, low over the harvester's parcel, over the poplar highway, to the gate (terrain clearance checked numerically: ≥ 11 m).
+- Debug helpers (`?debug`): `window.__app`, draw-call / triangle log, `intro.peek(u)`. `scripts/shot.mjs` gained `--views="x,y,z,tx,ty,tz;…"` and `--eval="js"`.
+- Budget: **44 draw calls, ~670 k triangles** for the whole outdoor scene.
+- Screenshots: `screenshots/p2-overview.png`, `p2-mountains.png`, `p2-field.png`, `p2-flight-*.png`.
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
 - Main JS chunk ~500 kB (Three.js); fine for now.
-- The flight currently crosses an empty flat plane (temporary 14 km ground). Phase 2 terrain, mountains and cotton fields will fill it. Re-tune `PATH` in `src/intro.js` once the mountains exist.
 - The gate end view targets the stand-in sign; adjust `GATE_TARGET` / `GATE_VIEW` when the real arch is built in Phase 3.
+- Headless Chromium (SwiftShader) renders this scene at well under 1 FPS, so a timed screenshot of the 7 s flight lands at its end; use `intro.peek(u)` to inspect flight frames. Real FPS must be checked on the iPad (Phase 8).
+- Lake water uses PMREM reflections only (no planar reflection pass, to protect iPad FPS); the «Жоғары» preset could add `Water.js` reflections in Phase 8.
+- The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Phase 2 — nature and environment (Sky.js + PMREM, fbm terrain with snowy mountains, lake, cotton fields with harvester, trees, solar farms, wind turbines, clouds/stars). Split the scene building into more loading steps so the progress bar stays meaningful.
+Phase 3 — buildings, roads, fence and the main entrance (site plan from PROMPT.md §3.1). Note: production buildings at x = ±35 with w = 52 overlap the 22 m avenue (x ±11), so use w ≈ 44 for the x = ±35 column (or shift it) to keep the avenue clear.
