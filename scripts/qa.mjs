@@ -79,7 +79,7 @@ async function glyphCheck(page) {
 /* ---------- 2. Tap every button ---------- */
 const TAPS = [
   ['[data-a="home"]', 2.5], ['[data-a="top"]', 2.5],
-  ['canvas@center', 2.5, () => !document.querySelector('.card').hidden, 'tap on a building opens the card'],
+  ['canvas@center', 2.5, () => !document.querySelector('#ui .card').hidden, 'tap on a building opens the card'],
   ['[data-a="card-roof"]', 1.5], ['[data-a="card-close"]', 0.5],
   ['[data-a="buildings"]', 0.3], ['.list-items .item >> nth=2', 2.5], ['[data-a="card-roof"]', 1.5], ['[data-a="card-close"]', 0.5],
   ['[data-a="vehicles"]', 0.3], ['.list-items .item >> nth=0', 3], ['[data-a="card-follow"]', 1], ['[data-a="card-close"]', 0.5],
@@ -117,7 +117,7 @@ async function tapAll() {
   for (const [sel, ff, check, label] of TAPS) {
     i++;
     try {
-      if (sel === 'canvas@center') await page.touchscreen.tap(630, 430);
+      if (sel === 'canvas@center') await page.touchscreen.tap(712, 372);
       else if (sel.startsWith('search:')) await page.locator('.list input').fill(sel.slice(7));
       else await page.locator(sel).first().tap({ timeout: 15000 });
       await page.evaluate((s) => window.__ff(s), ff);
