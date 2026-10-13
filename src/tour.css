@@ -1,0 +1,143 @@
+/* ===================== 360° tour (Phase 7) ===================== */
+body.touring #ui .card, body.touring #ui .ticker { display: none !important; }
+/* Icon-only dock during the tour: more room for the stations. */
+body.touring #ui .dock-btn > span { display: none; }
+body.touring #ui .dock-btn { padding: 0 12px; }
+body.touring .dock-btn[data-a="tour"].live { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 24px rgba(18, 181, 160, 0.7); }
+
+.tour-panel {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  width: min(370px, calc(100% - 24px));
+  max-height: calc(100% - 230px);
+  overflow-y: auto;
+  padding: 16px 18px 18px;
+  pointer-events: auto;
+  background: var(--ui-glass-strong);
+  scrollbar-width: none;
+}
+.tour-panel.in { animation: card-in 420ms cubic-bezier(.2, .8, .2, 1); }
+.tp-head { display: flex; align-items: center; gap: 12px; }
+.tp-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0b6b63, #12b5a0 60%, #f5c04a);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 22px;
+  box-shadow: 0 8px 22px rgba(18, 181, 160, 0.4);
+}
+.tp-head small { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: var(--ui-sub); text-transform: uppercase; }
+.tp-head h2 { margin: 3px 0 0; font-family: var(--font-display); font-size: 17px; line-height: 1.25; }
+.tp-dots { display: grid; grid-template-columns: repeat(17, 1fr); gap: 3px; margin: 14px 0 6px; }
+.tp-dots i { height: 5px; border-radius: 3px; background: var(--ui-chip); }
+.tp-dots i.done { background: rgba(18, 181, 160, 0.55); }
+.tp-dots i.on { background: var(--ui-gold); box-shadow: 0 0 10px rgba(245, 192, 74, 0.8); }
+.tp-progress { height: 3px; border-radius: 2px; background: var(--ui-chip); overflow: hidden; }
+.tp-progress i { display: block; height: 100%; background: linear-gradient(90deg, #12b5a0, #f5c04a); transform-origin: left; transform: scaleX(0); }
+.tp-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.tp-badges span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(18, 181, 160, 0.16), rgba(245, 192, 74, 0.16));
+  border: 1px solid rgba(18, 181, 160, 0.35);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tour-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 64px);
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  pointer-events: auto;
+  border-radius: 16px;
+}
+.tour-bar button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--ui-chip);
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 160ms ease, background 200ms ease;
+}
+.tour-bar button:active { transform: scale(0.96); }
+.tour-bar .sym { width: 18px; height: 18px; flex: none; }
+.tour-bar .ic { display: flex; }
+.tour-bar .main { min-width: 150px; justify-content: center; background: linear-gradient(90deg, #0b6b63, #12b5a0); color: #fff !important; }
+.tour-bar.paused .main { background: linear-gradient(90deg, #c98a10, #f5c04a); animation: pulse-gold 1.6s ease-in-out infinite; }
+@keyframes pulse-gold { 50% { box-shadow: 0 0 0 6px rgba(245, 192, 74, 0.25); } }
+.tour-bar .exit { background: transparent; }
+.tour-bar button.off { opacity: 0.35; pointer-events: none; }
+
+.tour-caption {
+  position: fixed;
+  left: 50%;
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 128px);
+  transform: translateX(-50%);
+  max-width: min(560px, calc(100% - 32px));
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  pointer-events: none;
+  animation: card-in 300ms ease;
+}
+
+.tour-finale {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  width: min(400px, calc(100% - 24px));
+  padding: 28px 30px 24px;
+  text-align: center;
+  pointer-events: auto;
+  background: var(--ui-glass-strong);
+}
+.tour-finale.in { animation: fin-in 900ms cubic-bezier(.2, .8, .2, 1); }
+@keyframes fin-in { from { opacity: 0; transform: translateY(16px) scale(0.95); } }
+.fin-title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(26px, 4vw, 36px);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  background: linear-gradient(90deg, #0b6b63, #12b5a0 45%, #f5c04a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.fin-sub { margin-top: 4px; font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--ui-text); }
+.tour-finale p { margin: 14px auto 0; max-width: 420px; font-size: 14px; line-height: 1.5; color: var(--ui-sub); }
+.fin-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
+.fin-stats div { padding: 10px 6px; border-radius: 14px; background: var(--ui-chip); display: flex; flex-direction: column; gap: 2px; }
+.fin-stats b { font-family: var(--font-display); font-size: 20px; color: var(--ui-accent); }
+.fin-stats span { font-size: 11.5px; font-weight: 600; color: var(--ui-sub); }
+.fin-btns { display: flex; gap: 8px; justify-content: center; margin-top: 18px; }
+.fin-btns button { min-height: 46px; padding: 0 20px; border: 0; border-radius: 14px; background: linear-gradient(90deg, #0b6b63, #12b5a0); color: #fff !important; font-weight: 800; font-size: 13px; cursor: pointer; }
+.fin-btns .ghost { background: var(--ui-chip); color: var(--ui-text) !important; }
+
+@media (max-width: 760px) {
+  .tour-panel, .tour-finale { left: 12px; right: 12px; width: auto; top: auto; bottom: 178px; max-height: 38vh; }
+  .tour-finale { overflow-y: auto; padding: 18px; }
+  .tour-caption { bottom: auto; top: calc(max(12px, env(safe-area-inset-top)) + 120px); }
+  .tour-bar { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 64px); max-width: calc(100% - 24px); overflow-x: auto; }
+  .tour-bar button { padding: 0 10px; font-size: 11.5px; }
+  .tour-bar .main { min-width: 0; }
+}

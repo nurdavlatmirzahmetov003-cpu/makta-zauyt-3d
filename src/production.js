@@ -89,6 +89,8 @@ export function buildProduction(scene, site) {
     const Bp = portPath(spec(b), sb, pb, isOpen(b)).reverse();
     const line = new Line(id, [...A, ...Bp], { kind });
     line.form = form;
+    line.ext = [line.path.cum[A.length - 1], line.path.cum[A.length]]; // exterior (tube) section
+    line.from = a;
     lines[id] = line;
     const wallA = A[A.length - 1], wallB = Bp[0];
     if (kind === 'belt') {

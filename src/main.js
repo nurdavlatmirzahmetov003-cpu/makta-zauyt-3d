@@ -24,6 +24,7 @@ import { createCameraman } from './cameraman.js';
 import { createLabels } from './labels.js';
 import { createQuality, createTimeOfDay } from './settings.js';
 import { createUI } from './ui.js';
+import { createTour } from './tour.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -98,7 +99,7 @@ const landing = createLanding({
 });
 
 // Updatable parts of the world (filled by the build steps).
-const world = { scene, env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null, production: null, traffic: null, robots: null };
+const world = { scene, env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null, production: null, traffic: null, robots: null, tour: null };
 // Interface modules (created once the world exists).
 let ui = null, cameraman = null, labels = null, quality = null, tod = null, hud = null;
 
@@ -108,6 +109,8 @@ function buildInterface() {
   quality = createQuality(renderer, world, { onAuto: () => ui?.toast(UI.quality.auto) });
   tod = createTimeOfDay(world);
   ui = createUI({ root: uiRoot, world, camera, controls, cameraman, labels, quality, tod });
+  world.tour = createTour({ scene, camera, controls, world, cameraman, tod, root: uiRoot });
+  ui.bindTour(world.tour);
   if (DEBUG) {
     hud = document.createElement('div');
     hud.className = 'debug-hud';
@@ -172,7 +175,7 @@ async function init() {
     console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
   }
   landing.ready();
-  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod };
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour };
   window.__sceneReady = true;
 }
 
@@ -200,9 +203,10 @@ renderer.setAnimationLoop(() => {
   world.production?.update(dt);
   world.robots?.update(dt, camera);
   tod?.update(dt);
+  world.tour?.update(dt);
   if (!intro.active) {
     cameraman?.update(dt);
-    controls.update();
+    if (!world.tour?.playing) controls.update();
   }
   renderer.render(scene, camera);
   labels?.update();

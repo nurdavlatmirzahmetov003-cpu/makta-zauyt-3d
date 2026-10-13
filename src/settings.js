@@ -59,6 +59,7 @@ export const TIMES = {
   day: { el: 38, az: 232, night: 0 },
   sunset: { el: 3.5, az: 258, night: 0.55 },
   night: { el: -14, az: 250, night: 1 },
+  golden: { el: 6, az: 252, night: 0.15 }, // tour finale panorama (not in the dock cycle)
 };
 
 export function createTimeOfDay(world) {
@@ -80,7 +81,7 @@ export function createTimeOfDay(world) {
     },
     cycle() {
       const order = ['day', 'sunset', 'night'];
-      this.set(order[(order.indexOf(mode) + 1) % 3]);
+      this.set(order[(Math.max(0, order.indexOf(mode)) + 1) % 3]);
     },
     update(dt) {
       if (t >= 1 || !to) return;

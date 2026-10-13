@@ -2,6 +2,7 @@
 // time-of-day controls, labels toggle, 17-stage timeline with a fact ticker, night theme.
 import * as THREE from 'three';
 import './ui.css';
+import './tour.css';
 import { UI, TEXT, STAGES, BUILDINGS, BUILDING_INFO, VEHICLE_INFO, ROBOT_ROLES, FEATURES } from './data.js';
 import { GATE_TARGET, GATE_VIEW } from './intro.js';
 
@@ -101,6 +102,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
   const boxAround = (p, w = 0.9, h = 1.95) => () => new THREE.Box3(new THREE.Vector3(p.x - w / 2, p.y, p.z - w / 2), new THREE.Vector3(p.x + w / 2, p.y + h, p.z + w / 2));
 
   function select(e, { openRoof = false, stage = null } = {}) {
+    if (e && world.tour?.active) world.tour.exit();
     sel = e;
     list.hidden = true;
     if (!e) { card.hidden = true; cameraman.highlight(null); cameraman.setFollow(null); setActiveStage(null); refreshRoofBtn(); return; }
@@ -224,7 +226,8 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
         ...world.robots.amrs.map((a, i) => ({ t: `${ROBOT_ROLES.amr.name} №${i + 1}`, s: ROBOT_ROLES.amr.fn, go: () => select({ kind: 'amr', ref: a }) })),
       ];
     }
-    return STAGES.map((s) => ({ t: `${s.n}. ${s.name}`, s: s.what, go: () => goStage(s.n) }));
+    // Choosing a stage starts (or jumps) the 360° tour there.
+    return STAGES.map((s) => ({ t: `${s.n}. ${s.name}`, s: s.what, go: () => { list.hidden = true; world.tour ? world.tour.jump(s.n) : goStage(s.n); } }));
   }
   function fillList(q) {
     const items = entries(listKind).filter((e) => !q || (e.t + ' ' + e.s).toLowerCase().includes(q.toLowerCase()));
@@ -242,6 +245,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     if (n) root.querySelector(`.stage[data-n="${n}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
   }
   function goStage(n) {
+    if (world.tour?.active) { list.hidden = true; world.tour.jump(n); return; }
     const st = STAGES[n - 1];
     const b = world.site.list.get(st.building);
     if (b) select({ kind: 'building', ref: b }, { openRoof: true, stage: n });
@@ -269,9 +273,9 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
   /* ---------- Dock actions ---------- */
   const actions = {
     toggle: () => dock.classList.toggle('open'),
-    home: () => { select(null); cameraman.view('home'); },
-    top: () => { select(null); cameraman.view('top'); },
-    tour: () => { if (world.tour) world.tour.start(); else { toast(UI.tourSoon); goStage(1); } },
+    home: () => { world.tour?.exit(); select(null); cameraman.view('home'); },
+    top: () => { world.tour?.exit(); select(null); cameraman.view('top'); },
+    tour: () => { if (!world.tour) { toast(UI.tourSoon); goStage(1); } else if (world.tour.active) world.tour.resume(); else world.tour.start(1); },
     process: () => openList('process'),
     buildings: () => openList('buildings'),
     vehicles: () => openList('vehicles'),
@@ -280,7 +284,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     roof: toggleRoof,
     time: () => tod.cycle(),
     quality: () => { pop.hidden = !pop.hidden; list.hidden = true; markQuality(); },
-    reset: () => { select(null); cameraman.flyTo(GATE_VIEW.clone(), GATE_TARGET.clone(), 2); },
+    reset: () => { world.tour?.exit(); select(null); cameraman.flyTo(GATE_VIEW.clone(), GATE_TARGET.clone(), 2); },
   };
   dock.addEventListener('click', (ev) => {
     const btn = ev.target.closest('button');
@@ -346,12 +350,24 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     };
   }
 
+  /** Connect the 360° tour (created after the interface). */
+  function bindTour(tour) {
+    tour.onStage((n) => setActiveStage(n));
+    tour.onState((on) => {
+      if (on) { select(null); list.hidden = true; pop.hidden = true; }
+      else { setActiveStage(null); refreshRoofBtn(); }
+      dock.querySelector('[data-a="tour"]').classList.toggle('live', on);
+    });
+  }
+
   return {
     select,
+    bindTour,
     goStage,
     setActiveStage,
     toast,
     onTap(x, y) {
+      if (world.tour?.active) return; // touching the view only pauses the tour
       if (!pop.hidden) { pop.hidden = true; return; }
       const hit = cameraman.pick(x, y);
       if (hit) select({ kind: hit.kind, ref: hit.ref });

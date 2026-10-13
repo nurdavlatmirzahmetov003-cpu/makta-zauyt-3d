@@ -10,8 +10,8 @@
 | 4 — Interior production line & flow | ✅ done |
 | 5 — Robots & vehicles | ✅ done |
 | 6 — UI & interactivity | ✅ done |
-| 7 — 360° tour | ⏳ next |
-| 8 — Lighting, polish, performance | — |
+| 7 — 360° tour | ✅ done |
+| 8 — Lighting, polish, performance | ⏳ next |
 | 9 — Final QA & publishing | — |
 
 ## Phase 0 — done
@@ -137,11 +137,25 @@ Deviations from the brief (deliberate):
 - `scripts/shot.mjs`: `--each="js|||js"` runs a snippet before each shot.
 - Screenshots: `screenshots/p6-stage-card.png` (stage 3 with roof open and the info card), `p6-vehicle-list.png` (following a cotton truck + vehicle list), `p6-night-labels.png` (night theme with all labels).
 
+## Phase 7 — done
+- `src/data.js`: `TOUR_STAGES` (17 × `{n, building, target, radius, height, duration, robots, badges}`: orbit centre/size, «Роботтар не істейді?» text and three smart-tech badges per stage, correct Kazakh) and `TOUR_TEXT` (controls, captions, finale).
+- `src/tour.js` — the director, a queue of camera shots:
+  - **Fly-in** (13 s): from the camera through the gate, over the monument roundabout, along the avenue and S2 to the intake; the roof opens on the way («Зауытқа кіріп келеміз…»).
+  - **Per stage**: roof fades open (the previous one closes), eased approach, **360° orbit in 13 s** with a gentle height wave and a focus that drifts from the entry conveyor to the exit conveyor; corner-bracket outline + a real SpotLight with a soft light cone on the station; shadows refocus to ±140 m around the station.
+  - **Between stages**: an arc above the roofs to a **real product in the glass tube** of the incoming line, followed for ~4.6 s («Өнім шыны құбырмен келесі цехқа өтіп барады»), then the approach to the next station.
+  - **Right panel**: stage number, «N-кезең · 17 кезеңнің», title, 17-dot progress + orbit progress bar, «Не болып жатыр?», «Роботтар не істейді?», «Кіреді → Шығады» pills, three «Ақылды технологиялар» badges.
+  - **Finale**: the semi (held at the dispatch dock since stage 16) leaves for export with a chase camera that slowly rises; the panel «ЭКСПОРТ ✈️ Әлемнің 30 еліне» appears with 17 кезең / 0% қара түтін / 100% жасыл энергия; the camera rises into an endless golden-hour panorama (`TIMES.golden`), with «Турды қайталау» / «Турдан шығу».
+  - **Controls**: ⏸ Тоқтату / ▶ Жалғастыру, ◀ Алдыңғы, Келесі ▶, ✕ Турдан шығу (SVG icons), plus Space / ← / → on a keyboard. Touching the 3D view pauses and hands over manual orbit around the current station; ▶ resumes with a 1.6 s blend from wherever the user left the camera (the orbit re-syncs its angle).
+  - «ӨНДІРІС ПРОЦЕСІ» list and the bottom timeline jump the tour to a stage; dock views (home / top / reset) and selecting an object exit the tour; the dock collapses to icons while touring.
+- `src/vehicles.js`: `holdSemi()` / `releaseSemi()` for the finale; `src/production.js`: each line exposes its tube section (`line.ext`) and source building (`line.from`).
+- Draw calls during the tour: 140–300 at stations, ~470 in the full panorama.
+- Screenshots: `screenshots/p7-stage-orbit.png` (stage 1 with panel and spotlight), `p7-product-follow.png` (raw cotton in the glass tube), `p7-export.png` (export finale chase).
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
 - Main JS chunk ~500 kB (Three.js); fine for now.
-- Night mode works from the dock, but bloom and lamp light pools come in Phase 8; the night scene is still quite dark.
+- Night mode works from the dock, but bloom and lamp light pools come in Phase 8; the night scene is still quite dark, and the tour's golden hour (sun at 6°) still looks close to daylight.
 - Opened-roof clones keep the emissive level from the moment of opening.
 - Vehicles do not yield to robots on zebras (robots only cross at zebras, but traffic does not stop for them).
 - Headless SwiftShader runs at a few FPS, so screenshot tests fast-forward the simulation with `world.traffic.update(0.1)` in `--eval`.
@@ -151,4 +165,4 @@ Deviations from the brief (deliberate):
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Phase 7 — 360° tour (`src/tour.js`: 17 stages along the product path with an orbit camera at each station, stage text from `STAGES`, finale «ЭКСПОРТ ✈️ Әлемнің 30 еліне»; hook into `world.tour.start()` and `ui.setActiveStage()`).
+Phase 8 — lighting, atmosphere, polish and iPad performance (golden/sunset/night grading, half-res bloom on «Жоғары», glowing night architecture, materials, «15 ЕРЕКШЕЛІК» panel + showroom LED wall, performance checks).

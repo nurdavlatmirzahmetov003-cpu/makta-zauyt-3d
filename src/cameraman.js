@@ -116,6 +116,8 @@ export function createCameraman(camera, controls, world) {
     highlight,
     pick,
     get following() { return !!follow; },
+    /** Cancel any fly-to and follow (the tour takes over the camera). */
+    stop() { fly.active = false; follow = null; },
     view(name) {
       const v = VIEWS[name];
       setFollow(null);

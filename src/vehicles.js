@@ -420,6 +420,7 @@ export function buildTraffic(scene, { production, gate }) {
     s: semiStop, wait: 75, until: () => palletReady,
     arrive: () => { palletReady = false; }, depart: () => { semi.exported = (semi.exported || 0) + 1; },
   }];
+  semi.onRespawn = () => { semi.cruise = 6.5; };
   // Oil tanker loading at the gantry on N street.
   const tankS = nearestS(paths.tanker, 105, -241.5);
   const tanker = add(new Vehicle(makeTractor('#eef1f2'), paths.tanker, { trailer: makeTankTrailer(), s: tankS - 160, name: 'tanker' }));
@@ -454,6 +455,18 @@ export function buildTraffic(scene, { production, gate }) {
   const obs = [];
   return {
     vehicles, parked, paths, semi,
+    /** Tour finale: park the semi at the dispatch dock and keep it loading until released. */
+    holdSemi() {
+      Object.assign(semi, { hidden: 0, s: semiStop, stopIdx: 0, v: 0, wait: 1e6, cruise: 6.5 });
+      semi.model.visible = semi.trailer.visible = true;
+      palletReady = false;
+      semi.place();
+    },
+    /** Send the held semi out to export (slightly faster than normal traffic). */
+    releaseSemi(cruise = 10) {
+      if (semi.wait > 0) semi.wait = 0.001;
+      semi.cruise = cruise;
+    },
     update(dt) {
       obs.length = 0;
       for (const v of vehicles) if (!v.hidden) v.obstacles(obs);
