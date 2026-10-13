@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import './ui.css';
 import './tour.css';
-import { UI, TEXT, STAGES, BUILDINGS, BUILDING_INFO, VEHICLE_INFO, ROBOT_ROLES, FEATURES } from './data.js';
+import { UI, TEXT, STAGES, BUILDINGS, BUILDING_INFO, VEHICLE_INFO, ROBOT_ROLES, FEATURES, FEATURES_TITLE } from './data.js';
 import { GATE_TARGET, GATE_VIEW } from './intro.js';
 
 const ICON = {
@@ -22,6 +22,8 @@ const ICON = {
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
+  features: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>',
+  screen: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
 };
 const svg = (k, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
 const LOGO = `<svg class="logo-mini" viewBox="-30 -30 60 60"><circle r="28" fill="none" stroke="url(#lgm)" stroke-width="2.5"/><defs><linearGradient id="lgm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#12b5a0"/><stop offset="1" stop-color="#f5c04a"/></linearGradient></defs>${[[0, -8, 9], [-9, 2, 9], [9, 2, 9], [0, 9, 8]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fffaf0" stroke="#d9e3e0" stroke-width="0.8"/>`).join('')}</svg>`;
@@ -47,7 +49,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     </header>
     <nav class="dock glass" aria-label="${UI.menu}">
       <button class="dock-toggle" data-a="toggle" aria-label="${UI.menu}">${svg('menu')}</button>
-      ${[['home', 'home'], ['top', 'top'], ['tour', 'tour'], ['process', 'process'], ['buildings', 'buildings'], ['vehicles', 'vehicles'], ['robots', 'robots'],
+      ${[['home', 'home'], ['top', 'top'], ['tour', 'tour'], ['process', 'process'], ['buildings', 'buildings'], ['vehicles', 'vehicles'], ['robots', 'robots'], ['features', 'features'],
         ['labels', 'labels'], ['roof', 'roof'], ['time', 'time'], ['quality', 'quality'], ['reset', 'reset']]
         .map(([a, ic]) => `<button class="dock-btn${a === 'tour' ? ' accent' : ''}" data-a="${a}">${svg(ic)}<span>${a === 'time' ? timeLabel('day') : UI.dock[a]}</span></button>`).join('')}
     </nav>
@@ -65,6 +67,11 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
       <div class="ticker glass"><div class="ticker-track">${tickerHTML()}${tickerHTML()}</div></div>
       <div class="timeline glass">${STAGES.map((s) => `<button class="stage" data-n="${s.n}" title="${esc(s.name)}"><b>${s.n}</b><span>${esc(s.name)}</span></button>`).join('')}</div>
     </footer>
+    <section class="features glass" hidden>
+      <div class="list-head"><h3>${esc(FEATURES_TITLE)}</h3><button class="icon-btn" data-a="features-close" aria-label="${UI.card.close}">${svg('close')}</button></div>
+      <div class="features-grid">${FEATURES.map(([t, d], i) => `<div class="feat"><b class="n">${i + 1}</b><div><h4>${esc(t.replace(/\.$/, ''))}</h4><p>${esc(d)}</p></div></div>`).join('')}</div>
+      <button class="wide-btn" data-a="features-led">${svg('screen')}<span>${UI.featuresLed}</span></button>
+    </section>
     <div class="toast glass" hidden></div>`;
 
   function timeLabel(mode) {
@@ -74,7 +81,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     return FEATURES.map(([t, d], i) => `<span class="tick"><b>${i + 1}. ${esc(t)}</b> ${esc(d)}</span>`).join('');
   }
   const $ = (sel) => root.querySelector(sel);
-  const card = $('.card'), list = $('.list'), pop = $('.quality-pop'), toastEl = $('.toast');
+  const card = $('.card'), list = $('.list'), pop = $('.quality-pop'), toastEl = $('.toast'), feats = $('.features');
   const dock = $('.dock');
 
   /* ---------- Toast ---------- */
@@ -284,6 +291,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     roof: toggleRoof,
     time: () => tod.cycle(),
     quality: () => { pop.hidden = !pop.hidden; list.hidden = true; markQuality(); },
+    features: () => { feats.hidden = !feats.hidden; list.hidden = pop.hidden = true; },
     reset: () => { world.tour?.exit(); select(null); cameraman.flyTo(GATE_VIEW.clone(), GATE_TARGET.clone(), 2); },
   };
   dock.addEventListener('click', (ev) => {
@@ -296,6 +304,13 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     const a = ev.target.closest('[data-a]')?.dataset.a;
     if (a === 'card-close') select(null);
     if (a === 'list-close') list.hidden = true;
+    if (a === 'features-close') feats.hidden = true;
+    if (a === 'features-led' && world.showroom) {
+      feats.hidden = true;
+      world.tour?.exit();
+      select(null);
+      cameraman.flyTo(world.showroom.view.pos.clone(), world.showroom.view.target.clone(), 2.6);
+    }
     if (a === 'card-roof') toggleRoof();
     if (a === 'card-follow' && sel) {
       if (cameraman.following) cameraman.setFollow(null);
@@ -312,7 +327,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
   });
   const markQuality = () => pop.querySelectorAll('[data-q]').forEach((b) => b.classList.toggle('on', b.dataset.q === quality.level));
   quality.onChange(markQuality);
-  addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { select(null); list.hidden = true; pop.hidden = true; } });
+  addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { select(null); list.hidden = true; pop.hidden = true; feats.hidden = true; } });
 
   tod.onChange((mode, night) => {
     dock.querySelector('[data-a="time"] span').innerHTML = timeLabel(mode);
@@ -354,7 +369,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
   function bindTour(tour) {
     tour.onStage((n) => setActiveStage(n));
     tour.onState((on) => {
-      if (on) { select(null); list.hidden = true; pop.hidden = true; }
+      if (on) { select(null); list.hidden = true; pop.hidden = true; feats.hidden = true; }
       else { setActiveStage(null); refreshRoofBtn(); }
       dock.querySelector('[data-a="tour"]').classList.toggle('live', on);
     });

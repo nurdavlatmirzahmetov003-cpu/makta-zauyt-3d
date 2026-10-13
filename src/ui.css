@@ -85,10 +85,10 @@ body.night {
   top: calc(max(12px, env(safe-area-inset-top)) + 70px);
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 7px;
+  gap: 1px;
+  padding: 6px;
   pointer-events: auto;
-  max-height: calc(100% - 210px);
+  max-height: calc(100% - 200px);
   overflow-y: auto;
   scrollbar-width: none;
 }
@@ -206,6 +206,41 @@ body.night .pill { background: rgba(255, 255, 255, 0.06); }
 .item b { font-size: 13px; }
 .item small { font-size: 11.5px; color: var(--ui-sub); line-height: 1.35; }
 .empty { color: var(--ui-sub); text-align: center; font-size: 13px; }
+
+/* ---------- «15 ЕРЕКШЕЛІК» panel ---------- */
+.features {
+  position: fixed;
+  left: 50%;
+  top: calc(max(12px, env(safe-area-inset-top)) + 70px);
+  transform: translateX(-50%);
+  width: min(980px, calc(100% - 24px));
+  max-height: calc(100% - 210px);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 16px;
+  pointer-events: auto;
+  background: var(--ui-glass-strong);
+  z-index: 3;
+  animation: feat-in 420ms cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes feat-in { from { opacity: 0; transform: translate(-50%, 16px) scale(0.97); } }
+.features h3 { font-size: 15px; }
+.features-grid { overflow-y: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0 0; scrollbar-width: thin; }
+.feat { display: flex; gap: 10px; padding: 12px; border-radius: 14px; background: var(--ui-chip); border: 1px solid rgba(18, 181, 160, 0.18); }
+.feat .n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #12b5a0, #f5c04a);
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+.feat h4 { margin: 2px 0 4px; font-size: 13px; line-height: 1.3; }
+.feat p { margin: 0; font-size: 12px; line-height: 1.45; color: var(--ui-sub); }
 
 /* ---------- Quality popover ---------- */
 .popover {
@@ -338,4 +373,7 @@ body.night .label3d { background: rgba(14, 26, 32, 0.75); color: #bff9ef; }
   .card, .list { left: 12px; right: 12px; width: auto; top: auto; bottom: 118px; max-height: 46vh; }
   .popover { left: 12px; bottom: 120px; }
   .ticker { display: none; }
+  .features { top: auto; bottom: 118px; max-height: 62vh; }
+  .features-grid { grid-template-columns: 1fr; }
 }
+@media (min-width: 761px) and (max-width: 1100px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }

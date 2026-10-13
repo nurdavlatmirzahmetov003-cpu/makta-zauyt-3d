@@ -40,6 +40,8 @@ export function createEnvironment(renderer, scene, { shadowMapSize = 2048 } = {}
   sun.shadow.camera.far = SUN_DISTANCE * 2;
   scene.add(sun, sun.target);
   const sunDir = new THREE.Vector3();
+  const lightDir = new THREE.Vector3(0, 1, 0); // the sun by day, the moon at night
+  const MOON_DIR = new THREE.Vector3(Math.sin(2.5) * 0.79, 0.62, -Math.cos(2.5) * 0.79).normalize();
   const focus = OUTDOOR_FOCUS.clone();
 
   /** Centre the shadow frustum on `center` with half-size `radius` (±330 outdoors, ±80 in the tour). */
@@ -50,7 +52,7 @@ export function createEnvironment(renderer, scene, { shadowMapSize = 2048 } = {}
     cam.right = cam.top = radius;
     cam.updateProjectionMatrix();
     sun.target.position.copy(focus);
-    sun.position.copy(focus).addScaledVector(sunDir, SUN_DISTANCE);
+    sun.position.copy(focus).addScaledVector(lightDir, SUN_DISTANCE);
   }
   setShadowFocus(OUTDOOR_FOCUS, 330);
 
@@ -93,8 +95,10 @@ export function createEnvironment(renderer, scene, { shadowMapSize = 2048 } = {}
 
   /* ---------- Sun / time of day ---------- */
   const C = {
-    sunDay: new THREE.Color('#fff4e2'), sunLow: new THREE.Color('#ffb06a'),
-    fogDay: new THREE.Color('#cfe2ee'), fogLow: new THREE.Color('#f0c9a6'), fogNight: new THREE.Color('#0d1726'),
+    sunDay: new THREE.Color('#fff4e2'), sunLow: new THREE.Color('#ff9442'), moon: new THREE.Color('#9db6ff'),
+    fogDay: new THREE.Color('#cfe2ee'), fogLow: new THREE.Color('#f2b688'), fogNight: new THREE.Color('#0e1a2c'),
+    skyDay: new THREE.Color('#d6ecff'), skyLow: new THREE.Color('#ffd2a8'), skyNight: new THREE.Color('#5d78b8'),
+    groundDay: new THREE.Color('#5f7d45'), groundLow: new THREE.Color('#7a5a3a'), groundNight: new THREE.Color('#162030'),
     cloudDay: new THREE.Color('#ffffff'), cloudLow: new THREE.Color('#ffd2b0'), cloudNight: new THREE.Color('#33405a'),
   };
   const tmp = new THREE.Color();
@@ -108,19 +112,31 @@ export function createEnvironment(renderer, scene, { shadowMapSize = 2048 } = {}
     // Azimuth from north (−Z), clockwise towards east (+X).
     sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el)).normalize();
     u.sunPosition.value.copy(sunDir);
-    setShadowFocus(focus, sun.shadow.camera.right);
 
-    const day = smoothstep(-4, 14, elevation);
+    const day = smoothstep(-3, 8, elevation);
     const low = 1 - smoothstep(4, 30, elevation);
-    sun.intensity = 3.1 * day;
-    sun.color.copy(C.sunDay).lerp(C.sunLow, low);
-    hemi.intensity = 0.12 + 0.48 * smoothstep(-8, 25, elevation);
-    renderer.toneMappingExposure = 0.5 + 0.12 * (1 - day);
+    const warm = low * smoothstep(-5, 2, elevation); // golden-hour weight (fades out after dusk)
+    const nightK = 1 - smoothstep(-6, 2, elevation);
+    // Below the horizon the directional light becomes a cool moon (switched while it is near zero).
+    const moon = elevation < -3;
+    lightDir.copy(moon ? MOON_DIR : sunDir);
+    setShadowFocus(focus, sun.shadow.camera.right);
+    sun.intensity = moon ? 0.55 * nightK : 3.1 * day;
+    sun.color.copy(moon ? C.moon : C.sunDay).lerp(C.sunLow, moon ? 0 : low);
+    // Golden hour: a warmer, hazier sky.
+    u.turbidity.value = 2.6 + 4.5 * low * day;
+    u.rayleigh.value = 1.35 + 1.1 * low * day;
+    u.mieCoefficient.value = 0.004 + 0.004 * low * day;
+    hemi.intensity = 0.22 + 0.38 * smoothstep(-8, 25, elevation) + 0.12 * warm;
+    hemi.color.copy(C.skyDay).lerp(C.skyLow, warm).lerp(C.skyNight, nightK);
+    hemi.groundColor.copy(C.groundDay).lerp(C.groundLow, warm * 0.6).lerp(C.groundNight, nightK);
+    renderer.toneMappingExposure = 0.5 + 0.14 * warm * day + 0.2 * nightK;
 
-    tmp.copy(C.fogDay).lerp(C.fogLow, low * day);
+    tmp.copy(C.fogDay).lerp(C.fogLow, warm);
     tmp.lerp(C.fogNight, 1 - smoothstep(-6, 6, elevation));
+    scene.fog.density = 0.00034 + 0.00012 * low * day;
     scene.fog.color.copy(tmp);
-    tmp.copy(C.cloudDay).lerp(C.cloudLow, low * day).lerp(C.cloudNight, 1 - smoothstep(-6, 6, elevation));
+    tmp.copy(C.cloudDay).lerp(C.cloudLow, warm).lerp(C.cloudNight, 1 - smoothstep(-6, 6, elevation));
     for (const c of clouds) c.material.color.copy(tmp);
 
     stars.material.opacity = 1 - smoothstep(-8, 3, elevation);

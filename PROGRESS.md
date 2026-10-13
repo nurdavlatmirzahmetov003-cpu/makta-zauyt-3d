@@ -11,8 +11,8 @@
 | 5 — Robots & vehicles | ✅ done |
 | 6 — UI & interactivity | ✅ done |
 | 7 — 360° tour | ✅ done |
-| 8 — Lighting, polish, performance | ⏳ next |
-| 9 — Final QA & publishing | — |
+| 8 — Lighting, polish, performance | ✅ done |
+| 9 — Final QA & publishing | ⏳ next |
 
 ## Phase 0 — done
 - Vite 8 + Three.js 0.170.0 (pinned). `vite.config.js`: `base: './'`, `outDir: 'docs'`. `docs/` is committed (Pages backup source).
@@ -151,13 +151,23 @@ Deviations from the brief (deliberate):
 - Draw calls during the tour: 140–300 at stations, ~470 in the full panorama.
 - Screenshots: `screenshots/p7-stage-orbit.png` (stage 1 with panel and spotlight), `p7-product-follow.png` (raw cotton in the glass tube), `p7-export.png` (export finale chase).
 
+## Phase 8 — done
+- **Time of day** (`world.js` `setSun`, blended by `settings.js` over 2.5 s): golden-hour weight drives a warmer, hazier sky (turbidity / rayleigh / mie), warm fog, clouds and hemisphere light and a slightly higher exposure; below the horizon the directional light becomes a cool **moon** (switched while its intensity is ~0) with a blue hemisphere; stars fade in. ACES + sRGB unchanged. «КҮН БАТУ» is now el 2.5° / night 0.45, the tour's golden hour el 6°.
+- **Night**: windows, contour strips, clean-air towers, signs and lamp heads glow (existing `setNightLevel`); new `onNight()` hook in `materials.js`; **208 lamp light pools** as one instanced additive decal (no real lights); the showroom LED wall brightens.
+- **Bloom** (`src/post.js`): EffectComposer (MSAA ×4, half-float) + **half-resolution UnrealBloom** + OutputPass, only on «Жоғары»; strength/threshold follow the night level (subtle glints by day). «Орташа» and «Төмен» render directly.
+- **«15 ЕРЕКШЕЛІК»**: dock button opens a glass panel with all 15 features (verbatim) and a button that flies the camera into the showroom; `src/showroom.js` builds a **curved 25 m LED wall** inside the glass dome (3072×1024 canvas, title + 5×3 tiles, LED pixel grid) plus three product pedestals (bale, oil bottle, folded garments).
+- **Touch**: page-level `touchmove` is blocked except inside the UI's scroll areas (no rubber-band), pinch is blocked, `touch-action` none on the canvas / manipulation elsewhere, `gesturestart` and double-tap zoom prevented (from Phase 0).
+- **Draw calls** are now counted over the whole frame (`renderer.info.autoReset = false`, reset once per frame), i.e. including the shadow pass and bloom passes. Interiors no longer cast shadows (they still receive them). Measured: gate view 720 («Орташа»), top view 789, **top view with all 17 production roofs open 1 244** («Орташа») / 1 255 («Жоғары» + night + bloom), 961 on «Төмен». All under 1 500.
+- Loading progress was already real (one `await requestAnimationFrame` per build step).
+- Screenshots: `screenshots/p8-night.png`, `p8-sunset.png`, `p8-led-wall.png`, `p8-features.png`.
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
 - Main JS chunk ~500 kB (Three.js); fine for now.
-- Night mode works from the dock, but bloom and lamp light pools come in Phase 8; the night scene is still quite dark, and the tour's golden hour (sun at 6°) still looks close to daylight.
 - Opened-roof clones keep the emissive level from the moment of opening.
 - Vehicles do not yield to robots on zebras (robots only cross at zebras, but traffic does not stop for them).
+- **iPad FPS is not measured yet**: headless Chromium uses software rendering (SwiftShader, ~1 FPS real). The «Орташа» budget (pixel ratio 1.5, 2048 shadows, no bloom, ≤ 1 250 draw calls) is designed for 30+ FPS, and the app auto-downgrades after 3 s below 25 FPS, but this must be confirmed on the real iPad.
 - Headless SwiftShader runs at a few FPS, so screenshot tests fast-forward the simulation with `world.traffic.update(0.1)` in `--eval`.
 - Stations are fairly sparse at aerial distance; they read best from the tour's orbit distance (Phase 7). Machines could be scaled up further if needed.
 - Headless Chromium (SwiftShader) renders this scene at well under 1 FPS, so a timed screenshot of the 7 s flight lands at its end; use `intro.peek(u)` to inspect flight frames. Real FPS must be checked on the iPad (Phase 8).
@@ -165,4 +175,4 @@ Deviations from the brief (deliberate):
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Phase 8 — lighting, atmosphere, polish and iPad performance (golden/sunset/night grading, half-res bloom on «Жоғары», glowing night architecture, materials, «15 ЕРЕКШЕЛІК» panel + showroom LED wall, performance checks).
+Phase 9 — final QA (button-tapping Playwright script, screenshots at 1180×820 / 820×1180 / 390×844 / 1920×1080, Kazakh glyph check), merge to `main`, GitHub Pages, README with live link, screenshots and the 2-minute defence script.

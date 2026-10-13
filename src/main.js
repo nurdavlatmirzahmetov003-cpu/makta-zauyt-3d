@@ -12,7 +12,9 @@ import { buildGate } from './gate.js';
 import { buildProduction } from './production.js';
 import { buildTraffic } from './vehicles.js';
 import { buildRobots } from './crowd.js';
-import { setNightLevel } from './materials.js';
+import { setNightLevel, onNight } from './materials.js';
+import { createPost } from './post.js';
+import { buildShowroomWall } from './showroom.js';
 import { createEnvironment } from './world.js';
 import { buildTerrain } from './terrain.js';
 import { buildTrees, buildShrubsAndFlowers, buildLake } from './nature.js';
@@ -39,6 +41,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.info.autoReset = false;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.5, 8000);
@@ -55,6 +58,9 @@ controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
 // Prevent Safari double-tap zoom / pinch-zoom on the page.
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+// No rubber-band page scroll on iOS: only the UI's own scroll areas may scroll.
+const SCROLLERS = '.list-items, .card, .tour-panel, .tour-finale, .features-grid, .timeline, .counters, .dock';
+document.addEventListener('touchmove', (e) => { if (e.touches.length > 1 || !e.target.closest?.(SCROLLERS)) e.preventDefault(); }, { passive: false });
 
 // Tap detection: movement under 6 px counts as a tap.
 let downPos = null;
@@ -99,15 +105,21 @@ const landing = createLanding({
 });
 
 // Updatable parts of the world (filled by the build steps).
-const world = { scene, env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null, production: null, traffic: null, robots: null, tour: null };
+const world = { scene, env: null, lake: null, fields: null, wind: null, site: null, monument: null, gate: null, production: null, traffic: null, robots: null, tour: null, showroom: null };
 // Interface modules (created once the world exists).
 let ui = null, cameraman = null, labels = null, quality = null, tod = null, hud = null;
+const post = createPost(renderer, scene, camera);
+onNight((k) => post.setNight(k));
 
 function buildInterface() {
   cameraman = createCameraman(camera, controls, world);
   labels = createLabels(camera);
   quality = createQuality(renderer, world, { onAuto: () => ui?.toast(UI.quality.auto) });
   tod = createTimeOfDay(world);
+  // Bloom only on «Жоғары»; the pixel ratio change also resizes the composer.
+  const applyPost = (l) => { post.setEnabled(l === 'high'); post.resize(); };
+  quality.onChange(applyPost);
+  applyPost(quality.level);
   ui = createUI({ root: uiRoot, world, camera, controls, cameraman, labels, quality, tod });
   world.tour = createTour({ scene, camera, controls, world, cameraman, tod, root: uiRoot });
   ui.bindTour(world.tour);
@@ -134,7 +146,7 @@ async function init() {
       roads = buildRoads(scene, atlas.safety);
     }],
     [LOADING_SITE.buildings, () => { world.site = buildBuildings(scene, atlas.signs, SPECIALS); }],
-    [LOADING_SITE.landmarks, () => { world.monument = buildMonument(scene, atlas.signs); }],
+    [LOADING_SITE.landmarks, () => { world.monument = buildMonument(scene, atlas.signs); world.showroom = buildShowroomWall(world.site); }],
     [LOADING_SITE.gate, () => { world.gate = buildGate(scene, atlas.safety); }],
     [LOADING_STEPS[3], () => { world.production = buildProduction(scene, world.site); }],
     [LOADING_SITE.vehicles, () => { world.traffic = buildTraffic(scene, { production: world.production, gate: world.gate }); }],
@@ -171,11 +183,12 @@ async function init() {
   await nextFrame();
   renderer.compile(scene, camera);
   if (DEBUG) {
+    renderer.info.reset();
     renderer.render(scene, camera);
     console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
   }
   landing.ready();
-  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour };
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, post };
   window.__sceneReady = true;
 }
 
@@ -183,6 +196,7 @@ addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight, false);
+  post.resize();
 });
 
 const clock = new THREE.Clock();
@@ -208,7 +222,8 @@ renderer.setAnimationLoop(() => {
     cameraman?.update(dt);
     if (!world.tour?.playing) controls.update();
   }
-  renderer.render(scene, camera);
+  renderer.info.reset(); // counted over all passes of the frame
+  post.render(dt);
   labels?.update();
   ui?.update(dt);
   quality?.update(dt);

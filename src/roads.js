@@ -3,7 +3,7 @@
 // street lamps (glow at night), road signs, the staff car park, industrial aprons and the highway.
 import * as THREE from 'three';
 import { Batch, box, rectXZ, shapeXZ, place, blob, setInstance, merge } from './geo.js';
-import { mats, TILE } from './materials.js';
+import { mats, TILE, onNight } from './materials.js';
 import { atlasPlane } from './signs.js';
 
 // axis 'x' = runs along X (constant z = c); axis 'z' = runs along Z (constant x = c).
@@ -237,6 +237,24 @@ function sidewalks(B, lampSpots, treeSpots) {
 }
 
 /* ---------- Street lamps (instanced) ---------- */
+function poolMaterial() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grad.addColorStop(0, 'rgba(255, 214, 150, 1)');
+  grad.addColorStop(0.35, 'rgba(255, 190, 120, 0.55)');
+  grad.addColorStop(1, 'rgba(255, 170, 100, 0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshBasicMaterial({
+    map: tex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
+  });
+}
+
 function lamps(scene, spots) {
   const m = mats();
   const pole = merge([
@@ -246,18 +264,24 @@ function lamps(scene, spots) {
   ]);
   const head = place(new THREE.BoxGeometry(0.95, 0.16, 0.4), { x: 1.45, y: 7.9 });
   const ring = place(new THREE.TorusGeometry(0.16, 0.05, 6, 12), { y: 3.2, rx: 90 });
+  // Warm light pool on the ground under each head (night only; additive decal instead of 208 real lights).
+  const pool = place(new THREE.PlaneGeometry(15, 15), { x: 1.45, y: 0.15 - CURB_H, rx: -90 });
   const n = spots.length;
   const P1 = new THREE.InstancedMesh(pole, m.steel, n), P2 = new THREE.InstancedMesh(head, m.glowWarm, n), P3 = new THREE.InstancedMesh(ring, m.glowTeal, n);
+  const P4 = new THREE.InstancedMesh(pool, poolMaterial(), n);
+  P4.renderOrder = 2;
+  P4.visible = false;
+  onNight((k) => { P4.material.opacity = 0.42 * k; P4.visible = k > 0.02; });
   spots.forEach((s, i) => {
     let x, z, ry;
     if (s.r) {
       [x, z] = P(s.r, s.a, s.side * (s.r.w / 2 + 2.4));
       ry = isX(s.r) ? s.side * Math.PI / 2 : (s.side > 0 ? Math.PI : 0);
     } else ({ x, z, ry } = s);
-    for (const im of [P1, P2, P3]) setInstance(im, i, x, CURB_H, z, ry);
+    for (const im of [P1, P2, P3, P4]) setInstance(im, i, x, CURB_H, z, ry);
   });
   P1.castShadow = true;
-  for (const im of [P1, P2, P3]) { im.computeBoundingSphere(); scene.add(im); }
+  for (const im of [P1, P2, P3, P4]) { im.computeBoundingSphere(); scene.add(im); }
   return n;
 }
 

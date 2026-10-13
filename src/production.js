@@ -168,6 +168,10 @@ export function buildProduction(scene, site) {
   ext.build(m, TILE, scene, { name: 'conveyors' });
   for (const [id, B] of inner) B.build(m, TILE, site.list.get(id).interior, { name: `interior:${id}` });
 
+  // Interiors receive shadows but do not cast them: with every roof open this keeps the shadow pass
+  // (and the frame) under the 1 500 draw-call budget.
+  for (const b of site.list.values()) b.interior.traverse((o) => { if (o.isMesh) o.castShadow = false; });
+
   // Warm up: run the factory for a few simulated minutes so every belt is already busy.
   for (let i = 0; i < 3400; i++) flow.update(0.25);
 

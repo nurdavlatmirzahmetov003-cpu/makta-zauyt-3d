@@ -15,6 +15,7 @@ export const TILE = {
 
 let M = null;
 const night = []; // [material, dayIntensity, nightIntensity]
+const nightHooks = []; // extra callbacks (light pools, bloom…)
 
 export function mats() {
   if (M) return M;
@@ -107,4 +108,10 @@ export function registerGlow(mat, day, nightValue) {
 /** 0 = day, 1 = full night: windows, lamps, contours and signs glow (driven by Phase 8). */
 export function setNightLevel(k) {
   for (const [m, d, n] of night) m.emissiveIntensity = d + (n - d) * k;
+  for (const f of nightHooks) f(k);
+}
+
+/** Run `f(k)` whenever the night level changes. */
+export function onNight(f) {
+  nightHooks.push(f);
 }

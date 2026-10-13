@@ -57,7 +57,7 @@ export function createQuality(renderer, world, { onAuto } = {}) {
 
 export const TIMES = {
   day: { el: 38, az: 232, night: 0 },
-  sunset: { el: 3.5, az: 258, night: 0.55 },
+  sunset: { el: 2.5, az: 258, night: 0.45 },
   night: { el: -14, az: 250, night: 1 },
   golden: { el: 6, az: 252, night: 0.15 }, // tour finale panorama (not in the dock cycle)
 };
