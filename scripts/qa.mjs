@@ -85,6 +85,7 @@ const TAPS = [
   ['[data-a="vehicles"]', 0.3], ['.list-items .item >> nth=0', 3], ['[data-a="card-follow"]', 1], ['[data-a="card-close"]', 0.5],
   ['[data-a="robots"]', 0.3], ['.list-items .item >> nth=0', 3], ['[data-a="card-close"]', 0.5],
   ['[data-a="robots"]', 0.3], ['[data-a="list-close"]', 0.3],
+  ['[data-a="buildings"]', 0.3],
   ['search:қойма', 0.3, () => document.querySelectorAll('.list-items .item').length > 0, 'search finds «қойма»'],
   ['.list-items .item >> nth=0', 2.5], ['[data-a="card-close"]', 0.5],
   ['[data-a="process"]', 0.3], ['.list-items .item >> nth=2', 12, () => window.__app.tour.active && window.__app.tour.stage === 3, 'process list jumps the tour to stage 3'],
