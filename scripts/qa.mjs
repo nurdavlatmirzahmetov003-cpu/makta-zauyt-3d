@@ -42,8 +42,9 @@ async function open({ width, height, touch = true, mobile = false }) {
   await page.addStyleTag({ content: '.debug-hud, .font-debug { display: none !important; }' });
   return { ctx, page, errors };
 }
-async function enter(page) {
-  await page.locator('#enter-btn').tap();
+async function enter(page, touch = true) {
+  const btn = page.locator('#enter-btn');
+  await (touch ? btn.tap() : btn.click());
   await page.waitForTimeout(400);
   await page.evaluate(() => window.__app.intro.skip());
   await page.waitForFunction(() => !document.getElementById('ui').hidden, null, { timeout: 60000 });
@@ -143,9 +144,12 @@ async function sizes() {
   for (const [name, width, height, touch, mobile] of SIZES) {
     const { ctx, page, errors } = await open({ width, height, touch, mobile });
     await shot(page, `size-${name}-landing`);
-    await enter(page);
-    await page.evaluate(() => { window.__app.quality.set('mid'); window.__app.ui.goStage(3); window.__ff(3); });
-    await page.waitForTimeout(2500); // let the CSS entrance animations finish before measuring
+    await enter(page, touch);
+    // Software rendering draws a frame every few seconds, so CSS entrance animations are switched off
+    // to measure (and capture) the final layout.
+    await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; }' });
+    await page.evaluate(() => { window.__app.quality.set('low'); window.__app.ui.goStage(3); window.__ff(3); });
+    await page.waitForTimeout(1500);
     // Every visible panel must stay inside the viewport.
     const over = await page.evaluate(() => [...document.querySelectorAll('#ui .topbar, #ui .dock, #ui .card, #ui .bottombar, #ui .timeline')]
       .filter((el) => !el.closest('[hidden]') && el.offsetParent !== null)
