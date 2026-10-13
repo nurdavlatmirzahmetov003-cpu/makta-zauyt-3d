@@ -369,6 +369,8 @@ body.night .label3d { background: rgba(14, 26, 32, 0.75); color: #bff9ef; }
   /* Menu button under the top bar, so the info card (bottom sheet) never covers it. */
   .dock { top: calc(max(12px, env(safe-area-inset-top)) + 112px); bottom: auto; max-height: calc(100% - 250px); z-index: 2; }
   .dock-toggle { display: flex; }
+  .dock.open { background: var(--ui-glass-strong); }
+  .dock.open ~ .card, .dock.open ~ .list { visibility: hidden; }
   .dock .dock-btn { display: none; }
   .dock.open .dock-btn { display: flex; }
   .card, .list { left: 12px; right: 12px; width: auto; top: auto; bottom: 118px; max-height: 46vh; }
