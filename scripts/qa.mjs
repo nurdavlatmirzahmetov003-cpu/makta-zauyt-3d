@@ -145,6 +145,7 @@ async function sizes() {
     await shot(page, `size-${name}-landing`);
     await enter(page);
     await page.evaluate(() => { window.__app.quality.set('mid'); window.__app.ui.goStage(3); window.__ff(3); });
+    await page.waitForTimeout(2500); // let the CSS entrance animations finish before measuring
     // Every visible panel must stay inside the viewport.
     const over = await page.evaluate(() => [...document.querySelectorAll('#ui .topbar, #ui .dock, #ui .card, #ui .bottombar, #ui .timeline')]
       .filter((el) => !el.closest('[hidden]') && el.offsetParent !== null)
@@ -156,6 +157,7 @@ async function sizes() {
     if (mobile) {
       await page.locator('[data-a="toggle"]').tap();
       await page.evaluate(() => window.__ff(0.5));
+      await page.waitForTimeout(800);
       await shot(page, `size-${name}-menu`);
     }
     for (const e of errors) problems.push(`${name} console: ${e}`);

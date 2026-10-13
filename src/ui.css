@@ -366,7 +366,8 @@ body.night .label3d { background: rgba(14, 26, 32, 0.75); color: #bff9ef; }
   .brand-text { font-size: 11px; }
   .counters { width: 100%; margin-left: 0; }
   .counter { padding: 4px 8px; }
-  .dock { top: auto; bottom: 120px; max-height: calc(100% - 260px); }
+  /* Menu button under the top bar, so the info card (bottom sheet) never covers it. */
+  .dock { top: calc(max(12px, env(safe-area-inset-top)) + 112px); bottom: auto; max-height: calc(100% - 250px); z-index: 2; }
   .dock-toggle { display: flex; }
   .dock .dock-btn { display: none; }
   .dock.open .dock-btn { display: flex; }
