@@ -13,18 +13,62 @@
   </head>
   <body>
     <div id="landing">
-      <div class="landing-card">
-        <div class="eyebrow">2040 · БОЛАШАҚТЫҢ ЗАУЫТЫ</div>
-        <h1 class="title">Иқанның Ақ Маржаны</h1>
-        <p class="subtitle">Болашақтың түтінсіз мақта зауытын бірге тамашалайық!</p>
-        <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
-        <div class="progress-msg" id="progress-msg">Жүктелуде…</div>
-        <button class="cta" id="enter-btn" disabled>ЗАУЫТҚА САЯХАТ ⟶</button>
+      <div class="aurora" aria-hidden="true">
+        <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><span class="blob b4"></span>
       </div>
+      <canvas id="fluff" aria-hidden="true"></canvas>
+      <div class="grain" aria-hidden="true"></div>
+      <main class="landing-card" id="landing-card">
+        <svg class="logo" viewBox="-60 -64 120 124" aria-hidden="true">
+          <defs>
+            <radialGradient id="lg-fluff" cx="40%" cy="35%" r="70%">
+              <stop offset="0" stop-color="#ffffff" />
+              <stop offset="0.65" stop-color="#fffaf0" />
+              <stop offset="1" stop-color="#eadfca" />
+            </radialGradient>
+            <linearGradient id="lg-bract" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="#0b6b63" />
+              <stop offset="1" stop-color="#4caf6a" />
+            </linearGradient>
+            <linearGradient id="lg-ring" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#12b5a0" />
+              <stop offset="1" stop-color="#f5c04a" />
+            </linearGradient>
+          </defs>
+          <circle class="logo-ring" r="56" fill="none" stroke="url(#lg-ring)" stroke-width="2.5" />
+          <path class="stem" d="M0 30 Q2 44 -4 56" stroke="#0b6b63" stroke-width="4" fill="none" stroke-linecap="round" />
+          <g class="bracts">
+            <path class="bract" style="--a:-62deg" d="M0 26 C-10 10 -8 -14 0 -30 C8 -14 10 10 0 26Z" />
+            <path class="bract" style="--a:-24deg" d="M0 26 C-10 10 -8 -14 0 -30 C8 -14 10 10 0 26Z" />
+            <path class="bract" style="--a:24deg" d="M0 26 C-10 10 -8 -14 0 -30 C8 -14 10 10 0 26Z" />
+            <path class="bract" style="--a:62deg" d="M0 26 C-10 10 -8 -14 0 -30 C8 -14 10 10 0 26Z" />
+          </g>
+          <g class="fluff-g">
+            <circle class="puff" style="--d:0s" cx="-17" cy="4" r="17" />
+            <circle class="puff" style="--d:.5s" cx="17" cy="4" r="17" />
+            <circle class="puff" style="--d:1s" cx="0" cy="-14" r="18" />
+            <circle class="puff" style="--d:1.5s" cx="0" cy="12" r="16" />
+            <circle class="puff" style="--d:.8s" cx="-9" cy="-4" r="13" />
+            <circle class="puff" style="--d:1.2s" cx="10" cy="-4" r="13" />
+          </g>
+        </svg>
+        <div class="eyebrow" id="eyebrow"></div>
+        <h1 class="title" id="title"></h1>
+        <p class="subtitle"><span id="typer"></span><span class="caret" aria-hidden="true"></span></p>
+        <div class="loader" id="loader">
+          <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+          <div class="progress-row">
+            <span class="progress-msg" id="progress-msg"></span>
+            <span class="progress-pct" id="progress-pct">0%</span>
+          </div>
+        </div>
+        <button class="cta" id="enter-btn" disabled><span class="cta-label" id="enter-label"></span></button>
+        <ul class="badges" id="badges"></ul>
+      </main>
     </div>
     <canvas id="c"></canvas>
     <div id="ui" hidden>
-      <div class="ui-chip">ИҚАННЫҢ АҚ МАРЖАНЫ — МАҚТА ӨҢДЕУ ӨНЕРКӘСІПТІК КЕШЕНІ</div>
+      <div class="ui-chip" id="ui-chip"></div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

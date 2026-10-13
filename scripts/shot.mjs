@@ -1,4 +1,5 @@
-// Usage: node scripts/shot.mjs [out.png] [--enter] [--query=?debug]
+// Usage: node scripts/shot.mjs [out.png ...] [--enter] [--query=?debug] [--wait=ms,ms,...]
+// With several outputs, each is taken after the matching --wait delay (cumulative).
 // Serves docs/ via `vite preview`, takes a 1180x820 screenshot, prints console errors.
 import { createRequire } from 'node:module';
 import { execSync } from 'node:child_process';
@@ -10,7 +11,9 @@ const { chromium } = pw;
 import { spawn } from 'node:child_process';
 
 const args = process.argv.slice(2);
-const out = args.find((a) => a.endsWith('.png')) || 'screenshots/phase.png';
+const outs = args.filter((a) => a.endsWith('.png'));
+if (!outs.length) outs.push('screenshots/phase.png');
+const waits = (args.find((a) => a.startsWith('--wait=')) || '--wait=').slice(7).split(',').filter(Boolean).map(Number);
 const enter = args.includes('--enter');
 const query = (args.find((a) => a.startsWith('--query=')) || '--query=').slice(8);
 const PORT = 4179;
@@ -26,10 +29,12 @@ page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}`));
 try {
   await page.goto(`http://localhost:${PORT}/${query}`);
   await page.waitForFunction(() => window.__sceneReady === true, null, { timeout: 60000 });
-  if (enter) { await page.click('#enter-btn'); await page.waitForTimeout(900); }
-  await page.waitForTimeout(800);
-  await page.screenshot({ path: out });
-  console.log('saved', out);
+  if (enter) { await page.waitForTimeout(600); await page.click('#enter-btn'); }
+  for (let i = 0; i < outs.length; i++) {
+    await page.waitForTimeout(waits[i] ?? 1500);
+    await page.screenshot({ path: outs[i] });
+    console.log('saved', outs[i]);
+  }
 } finally {
   console.log(errors.length ? errors.join('\n') : 'no console errors');
   await browser.close();
