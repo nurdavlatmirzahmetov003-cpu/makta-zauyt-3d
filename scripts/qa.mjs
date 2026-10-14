@@ -103,6 +103,7 @@ const TAPS = [
   ['[data-a="features"]', 0.3], ['[data-a="features-led"]', 3],
   ['[data-a="labels"]', 0.5], ['[data-a="labels"]', 0.3],
   ['[data-a="roof"]', 1.5], ['[data-a="roof"]', 1.5],
+  ['eval:window.__app.clock.jumpTo(12 * 60)', 3], // the tour finale moved the clock to golden hour
   ['[data-a="time"]', 3, () => window.__app.tod.mode === 'sunset', 'sunset'],
   ['[data-a="time"]', 3, () => document.body.classList.contains('night'), 'night theme'],
   ['[data-a="time"]', 3],
@@ -134,8 +135,11 @@ async function tapAll() {
     i++;
     try {
       if (sel === 'canvas@center') await page.touchscreen.tap(712, 372);
+      else if (sel.startsWith('eval:')) await page.evaluate(sel.slice(5));
+      // 3D-anchored labels are re-placed every frame: skip Playwright's stability wait for them.
+      else if (sel.includes('xp-label')) await page.locator(sel).first().tap({ force: true, timeout: 45000 });
       else if (sel.startsWith('search:')) await page.locator('.list input').fill(sel.slice(7));
-      else await page.locator(sel).first().tap({ timeout: 15000 });
+      else await page.locator(sel).first().tap({ timeout: 45000 });
       await page.evaluate((s) => window.__ff(s), ff);
       if (check && !(await page.evaluate(check))) problems.push(`check failed: ${label}`);
       await shot(page, `tap-${String(i).padStart(2, '0')}`);

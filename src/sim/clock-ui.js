@@ -63,11 +63,17 @@ export function createClockUI({ root, clock, life, economy, toast, tourActive = 
       ['profit', money(k.profit), k.profit >= 0 ? 'pos' : 'neg'], ['margin', pct(k.margin)],
       ['energy', `${num(k.energyMWh, 1)} ${u.mwh}`], ['co2', tons(k.co2)], ['robots', num(economy.activeRobots())],
     ];
-    pop.innerHTML = `
-      <div class="kp-head"><h3>${KT.today(clock.day, clock.format())}</h3><button class="icon-btn" data-k="kpi-close" aria-label="✕">✕</button></div>
-      <p class="kp-note">${ECONOMY.note}</p>
-      <div class="kp-grid">${rows.map(([key, v, cls = '']) => `<div class="kp ${cls}"><span>${KT[key]}</span><b>${v}</b></div>`).join('')}</div>
-      <div class="kp-foot">⚡ ${KT.electricity}: <b>${money(k.electricity)}</b> · ☀️ ${KT.saved}: <b>${money(k.saved)}</b></div>`;
+    // The frame (with the close button) is built once; only the values refresh, so taps never hit a replaced node.
+    if (!pop.firstChild) {
+      pop.innerHTML = `
+        <div class="kp-head"><h3></h3><button class="icon-btn" data-k="kpi-close" aria-label="✕">✕</button></div>
+        <p class="kp-note">${ECONOMY.note}</p>
+        <div class="kp-grid"></div>
+        <div class="kp-foot"></div>`;
+    }
+    pop.querySelector('h3').textContent = KT.today(clock.day, clock.format());
+    pop.querySelector('.kp-grid').innerHTML = rows.map(([key, v, cls = '']) => `<div class="kp ${cls}"><span>${KT[key]}</span><b>${v}</b></div>`).join('');
+    pop.querySelector('.kp-foot').innerHTML = `⚡ ${KT.electricity}: <b>${money(k.electricity)}</b> · ☀️ ${KT.saved}: <b>${money(k.saved)}</b>`;
   }
 
   let lastMin = -1, kpiT = 0;
