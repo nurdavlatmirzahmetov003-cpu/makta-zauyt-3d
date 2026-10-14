@@ -46,7 +46,7 @@ function plantGeometries() {
 }
 
 /* ---------- Harvester ---------- */
-function buildHarvester() {
+export function buildHarvester() {
   const g = new THREE.Group();
   const white = new THREE.MeshStandardMaterial({ color: '#f4f6f5', roughness: 0.35, metalness: 0.2 });
   const dark = new THREE.MeshStandardMaterial({ color: '#2a3237', roughness: 0.6, metalness: 0.3 });

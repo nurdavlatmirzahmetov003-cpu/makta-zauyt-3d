@@ -1,0 +1,81 @@
+/* ===================== «Роботтар әлемі» page (Phase 13) ===================== */
+body.rp {
+  background: radial-gradient(120% 90% at 50% 10%, #fdfefe 0%, #e3f6ff 38%, #d4f3ea 70%, #c8ecdf 100%);
+  color: var(--ui-text); font-family: var(--font-ui); overflow: hidden;
+}
+#rc { position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; display: block; touch-action: none; }
+#rp-ui { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+#rp-ui button { font-family: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
+#rp-ui [hidden] { display: none !important; }
+.rp-top { position: fixed; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); display: flex; align-items: center; gap: 10px; }
+.rp-back, .rp-btn {
+  pointer-events: auto; display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 14px;
+  font-weight: 800; font-size: 13px; text-decoration: none; color: var(--ui-text); border: 1px solid var(--ui-border); cursor: pointer;
+}
+.rp-title { margin: 0; padding: 10px 18px; border-radius: 14px; font-family: var(--font-display); font-size: 16px; letter-spacing: 0.03em; pointer-events: auto; }
+.rp-tools { margin-left: auto; display: flex; gap: 8px; }
+.rp-btn.on { background: linear-gradient(90deg, #0b6b63, #12b5a0); color: #fff; }
+.rp-info {
+  position: fixed; right: max(12px, env(safe-area-inset-right)); top: calc(max(12px, env(safe-area-inset-top)) + 64px);
+  width: min(330px, calc(100% - 24px)); max-height: calc(100% - 260px); overflow-y: auto; padding: 16px 18px; pointer-events: auto;
+  background: var(--ui-glass-strong); animation: card-in 300ms ease;
+}
+.rp-info h2 { margin: 8px 0 6px; font-family: var(--font-display); font-size: 20px; }
+.specs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.specs > div { padding: 8px 10px; border-radius: 12px; background: var(--ui-chip); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.specs span { font-size: 10.5px; font-weight: 600; color: var(--ui-sub); }
+.specs b { font-size: 12.5px; line-height: 1.3; }
+.specs .bat { grid-column: 1 / -1; }
+.bat em { display: block; height: 8px; border-radius: 4px; background: rgba(0, 0, 0, 0.07); overflow: hidden; margin-top: 3px; }
+.bat em i { display: block; height: 100%; background: linear-gradient(90deg, #12b5a0, #7dffb0); transform-origin: left; transition: transform 500ms ease; }
+.bat em i.low { background: linear-gradient(90deg, #ff6b5a, #f5c04a); }
+.rp-carousel {
+  position: fixed; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+  display: flex; gap: 8px; padding: 8px; overflow-x: auto; pointer-events: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+}
+.rp-carousel::-webkit-scrollbar { display: none; }
+.rp-card {
+  flex: none; width: 118px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 6px 8px; border-radius: 14px;
+  border: 1px solid transparent; background: rgba(255, 255, 255, 0.55); cursor: pointer; scroll-snap-align: center; transition: transform 160ms ease, border-color 200ms ease;
+}
+.rp-card img { width: 84px; height: 84px; object-fit: contain; }
+.rp-card b { font-family: var(--font-display); font-size: 11px; }
+.rp-card small { font-size: 9.5px; color: var(--ui-sub); text-align: center; line-height: 1.25; }
+.rp-card.on { border-color: var(--ui-accent); background: #fff; box-shadow: 0 6px 18px rgba(18, 181, 160, 0.35); transform: translateY(-3px); }
+.rp-chat {
+  position: fixed; left: max(12px, env(safe-area-inset-left)); top: calc(max(12px, env(safe-area-inset-top)) + 64px); bottom: 190px;
+  width: min(340px, calc(100% - 24px)); display: flex; flex-direction: column; pointer-events: auto; background: var(--ui-glass-strong); overflow: hidden;
+}
+.rc-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--ui-border); }
+.rc-log { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.rc-msg { max-width: 88%; padding: 8px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.45; background: rgba(255, 255, 255, 0.8); }
+.rc-msg.user { align-self: flex-end; background: linear-gradient(135deg, #0f9e8c, #12b5a0); color: #fff; }
+.rc-sugg { display: flex; flex-wrap: wrap; gap: 6px; }
+.rc-chips { display: flex; gap: 6px; padding: 8px 10px; overflow-x: auto; border-top: 1px solid var(--ui-border); scrollbar-width: none; }
+.rc-form { display: flex; gap: 4px; padding: 8px 8px 10px 10px; }
+.rc-form input { flex: 1; min-width: 0; min-height: 42px; padding: 0 14px; border-radius: 21px; border: 1px solid var(--ui-border); background: #fff; font: inherit; font-size: 14px; outline: none; }
+.rc-send { background: var(--ui-accent) !important; color: #fff !important; border-radius: 50%; }
+.rc-mic.rec { color: #ff5a4a !important; }
+.chip { flex: none; min-height: 36px; padding: 0 12px; border-radius: 18px; border: 1px solid rgba(18, 181, 160, 0.35); background: var(--ui-chip); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+body.rp .joy { bottom: calc(max(12px, env(safe-area-inset-bottom)) + 168px); }
+.rp-actions { position: fixed; right: max(12px, env(safe-area-inset-right)); bottom: calc(max(12px, env(safe-area-inset-bottom)) + 150px); display: flex; gap: 6px; padding: 6px; pointer-events: auto; }
+.rp-actions button { width: 52px; height: 52px; border: 0; border-radius: 14px; background: var(--ui-chip); font-size: 24px; cursor: pointer; }
+.rp-actions button:active { transform: scale(0.94); }
+.hs-layer { position: fixed; inset: 0; pointer-events: none; }
+.hs {
+  position: absolute; left: -11px; top: -11px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; pointer-events: auto; cursor: pointer;
+  background: radial-gradient(circle, #5ff5df 0 35%, #12b5a0 60%); box-shadow: 0 0 0 0 rgba(18, 181, 160, 0.6); animation: hs-pulse 1.8s ease-out infinite;
+}
+@keyframes hs-pulse { 0% { box-shadow: 0 0 0 0 rgba(18, 181, 160, 0.65); } 100% { box-shadow: 0 0 0 16px rgba(18, 181, 160, 0); } }
+.hs-call { position: absolute; left: 0; top: 0; max-width: 260px; padding: 10px 12px; pointer-events: auto; background: var(--ui-glass-strong); }
+.hs-call b { font-family: var(--font-display); font-size: 12.5px; color: var(--ui-accent); }
+.hs-call p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.45; }
+@media (max-width: 760px) {
+  .rp-title { display: none; }
+  .rp-info { top: auto; bottom: 150px; left: 12px; right: 12px; width: auto; max-height: 34vh; padding: 12px 14px; }
+  .rp-info h2 { font-size: 16px; }
+  .rp-chat { left: 0; right: 0; bottom: 0; top: auto; height: 70vh; width: auto; border-radius: 22px 22px 0 0; z-index: 5; }
+  .rp-actions { bottom: auto; top: calc(max(12px, env(safe-area-inset-top)) + 64px); right: 12px; flex-direction: column; }
+  .rp-card { width: 96px; }
+  .rp-card img { width: 64px; height: 64px; }
+}

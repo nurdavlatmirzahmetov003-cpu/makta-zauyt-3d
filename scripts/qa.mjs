@@ -7,6 +7,7 @@
 import { createRequire } from 'node:module';
 import { execSync, spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 // Use the globally preinstalled Playwright (do not `playwright install`).
 const require = createRequire(import.meta.url);
 let pw;
@@ -30,8 +31,8 @@ const log = (...a) => console.log('[qa]', ...a);
 
 // Simulation fast-forward (headless rendering runs at ~1 FPS, so animations are stepped manually).
 const FF = `window.__ff = (s) => { const a = __app, w = a.world; for (let i = 0; i < s * 10; i++) {
-  a.step(0.1); a.tour.update(0.1); a.guide.update(0.1); a.explode.update(0.1);
-  if (!a.tour.playing && !a.guide.playing) { a.cameraman.update(0.1); a.controls.update(); } a.ui.update(0.1); a.chat.update(0.1); } };`;
+  a.step(0.1); a.tour.update(0.1); a.guide.update(0.1); a.explode.update(0.1); a.drive.update(0.1);
+  if (!a.tour.playing && !a.guide.playing && !a.drive.playing) { a.cameraman.update(0.1); a.controls.update(); } a.ui.update(0.1); a.chat.update(0.1); } };`;
 
 async function open({ width, height, touch = true, mobile = false }) {
   const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: mobile, deviceScaleFactor: 1 });
@@ -122,7 +123,38 @@ const TAPS = [
   ['.guide [data-g="end"]', 1, () => !window.__app.guide.active, 'guide ends'],
   ['[data-a="explode"]', 0.5], ['[data-x="whole"]', 3, () => window.__app.explode.mode === 'base', 'base layers'],
   ['.xp-label.layer >> nth=2', 0.5, () => !document.querySelector('.xp-card').hidden, 'layer info'], ['[data-x="assemble"]', 3, () => !window.__app.explode.active, 'assembled'],
+  // Phase 13: CSV report, robot driving with the joystick, link to «Роботтар әлемі».
+  ['csv', 0.5], ['.chat .c-close', 0.3],
+  ['[data-a="drive"]', 0.5], ['[data-dv="humanoid"]', 3, () => window.__app.drive.active, 'drive a humanoid'],
+  ['joy:0,1', 3, () => true, 'joystick forward'], ['[data-dv="exit"]', 2, () => !window.__app.drive.active, 'back to its task'],
+  ['[data-a="drive"]', 0.5], ['[data-dv="drone"]', 3, () => window.__app.drive.active, 'drive a drone'], ['[data-dv="up"]', 1], ['joy:1,0', 3],
+  ['[data-dv="exit"]', 2, () => !window.__app.drive.active, 'drone back to patrol'],
+  ['eval:window.__qaHref = document.querySelector(\'[data-a="world"]\') ? "ok" : ""', 0.1, () => window.__qaHref === 'ok', 'robots page link'],
 ];
+
+/** Hold the joystick in a direction ("x,y") while the simulation runs. */
+async function drag(page, dir, ff) {
+  const [x, y] = dir.split(',').map(Number);
+  const r = await page.locator('.joy').first().boundingBox();
+  const cx = r.x + r.width / 2, cy = r.y + r.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx + x * 40, cy - y * 40, { steps: 4 });
+  await page.evaluate((s) => window.__ff(s), ff);
+  await page.mouse.up();
+}
+/** Open the report and download the CSV: UTF-8 with BOM and Kazakh letters intact. */
+async function checkCsv(page) {
+  if (!(await page.evaluate(() => window.__app.chat.isOpen))) await page.locator('.chat-fab').tap();
+  if (!(await page.locator('.chat .rep').count())) { await page.locator('.chat-chips .chip').first().tap(); await page.waitForTimeout(4000); }
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 30000 }), page.locator('.chat .rep [data-r="csv"]').last().click()]);
+  const buf = await readFile(await dl.path());
+  const bom = buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf;
+  const text = buf.toString('utf8');
+  const kz = ['Қабылданған', 'Өндірілген', 'Табыс', 'Шығын', 'Таза пайда', 'Рентабельділік'].every((w) => text.includes(w));
+  log(`CSV ${dl.suggestedFilename()}: ${buf.length} bytes, BOM=${bom}, Kazakh=${kz}`);
+  if (!bom || !kz) problems.push(`CSV check failed (BOM=${bom}, Kazakh=${kz})`);
+}
 
 async function tapAll() {
   const { ctx, page, errors } = await open({ width: 1180, height: 820 });
@@ -135,6 +167,8 @@ async function tapAll() {
     i++;
     try {
       if (sel === 'canvas@center') await page.touchscreen.tap(712, 372);
+      else if (sel.startsWith('joy:')) await drag(page, sel.slice(4), ff);
+      else if (sel === 'csv') await checkCsv(page);
       else if (sel.startsWith('eval:')) await page.evaluate(sel.slice(5));
       // 3D-anchored labels are re-placed every frame: skip Playwright's stability wait for them.
       else if (sel.includes('xp-label')) await page.locator(sel).first().tap({ force: true, timeout: 45000 });
@@ -188,8 +222,98 @@ async function sizes() {
   }
 }
 
+/* ---------- 4. «Роботтар әлемі» page ---------- */
+const RP_TAPS = [
+  ['.rp-card >> nth=2', 2, () => window.__rp.cur === 2, 'switch to «Сақшы»'], ['[data-r="chat"]', 1, () => !document.querySelector('.rp-chat').hidden, 'robot chat opens'],
+  ...['сәлем', 'қол бұлға', 'би биле', 'алға жүр', 'артқа жүр', 'оңға бұрыл', 'солға бұрыл', 'айнал', 'секір', 'отыр', 'тұр', 'жарықты сөндір', 'жарықты қос', 'түсіңді өзгерт', 'жұмыс істе', 'батарея қанша?', 'тоқта']
+    .map((c) => [`chip:${c}`, 1.2]),
+  ['type:абырвалг', 1.2, () => !!document.querySelector('.rc-sugg'), 'unknown command → suggestions'],
+  ['[data-r="chat-close"]', 0.5], ['.hs >> nth=0', 0.5, () => !document.querySelector('.hs-call').hidden, 'hotspot callout'],
+  ['.rp-card >> nth=6', 2, () => window.__rp.cur === 6, 'switch to «Қыран»'],
+  ['[data-r="control"]', 0.5, () => !document.querySelector('.joy').hidden, 'manual control on'], ['joy:0,1', 2], ['joy:-1,0', 2],
+  ...['wave', 'dance', 'jump', 'light', 'work'].map((a) => [`[data-act="${a}"]`, 1]),
+  ['[data-r="control"]', 0.5],
+  ...[0, 1, 3, 4, 5, 7, 8, 9, 10, 11].map((n) => [`.rp-card >> nth=${n}`, 1.5, new Function(`return window.__rp.cur === ${n}`), `robot ${n + 1}`]),
+];
+async function robotsPage() {
+  const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, hasTouch: true, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(`http://localhost:${PORT}/robots.html?debug`);
+  await page.waitForFunction(() => window.__rpReady === true, null, { timeout: 120000 });
+  await page.evaluate(() => { window.__ff = (s) => new Promise((r) => setTimeout(r, s * 1000)); });
+  let i = 0;
+  for (const [sel, ff, check, label] of RP_TAPS) {
+    i++;
+    try {
+      if (sel.startsWith('chip:')) await page.locator('.rc-chips .chip', { hasText: sel.slice(5) }).first().tap({ timeout: 45000 });
+      else if (sel.startsWith('type:')) { await page.locator('.rc-form input').fill(sel.slice(5)); await page.locator('.rc-send').tap(); }
+      else if (sel.startsWith('joy:')) await drag(page, sel.slice(4), ff);
+      else await page.locator(sel).first().tap({ timeout: 45000, force: sel.startsWith('.hs') });
+      if (!sel.startsWith('joy:')) await page.waitForTimeout(ff * 1000);
+      if (check && !(await page.evaluate(check))) problems.push(`robots page check failed: ${label}`);
+      await shot(page, `rp-${String(i).padStart(2, '0')}`);
+      log(`robots ${i}/${RP_TAPS.length} ${sel}${label ? ` — ${label}` : ''} ok`);
+    } catch (e) {
+      problems.push(`robots tap ${sel}: ${e.message.split('\n')[0]}`);
+      log(`robots ${i}/${RP_TAPS.length} ${sel} FAILED`);
+    }
+  }
+  // Chat replies must be Kazakh text (no empty bubbles), the battery answer must carry a number.
+  const replies = await page.evaluate(() => [...document.querySelectorAll('.rc-msg.bot')].map((m) => m.textContent));
+  log(`robot chat replies: ${replies.length}`);
+  // «Зауытта көрсету» opens the factory focused on that robot type.
+  await page.locator('[data-r="factory"]').tap();
+  await page.waitForFunction(() => window.__sceneReady === true, null, { timeout: 180000 });
+  await page.waitForFunction(() => !document.getElementById('ui').hidden, null, { timeout: 60000 }).catch(() => problems.push('factory focus: UI did not open'));
+  await page.waitForTimeout(3000);
+  await shot(page, 'rp-factory-focus');
+  for (const e of errors) problems.push(`robots page console: ${e}`);
+  await ctx.close();
+}
+async function robotsSizes() {
+  for (const [name, width, height, touch, mobile] of SIZES.slice(0, 3)) {
+    const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: mobile, deviceScaleFactor: 1 });
+    const page = await ctx.newPage();
+    await page.goto(`http://localhost:${PORT}/robots.html`);
+    await page.waitForFunction(() => window.__rpReady === true, null, { timeout: 120000 });
+    await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; }' });
+    await page.waitForTimeout(2500);
+    const over = await page.evaluate(() => [...document.querySelectorAll('.rp-top, .rp-info, .rp-carousel')]
+      .map((el) => [el.className, el.getBoundingClientRect()])
+      .filter(([, r]) => r.left < -1 || r.top < -1 || r.right > innerWidth + 1 || r.bottom > innerHeight + 1).map(([c]) => c));
+    for (const o of over) problems.push(`robots ${name}: overflow ${o}`);
+    await shot(page, `rp-size-${name}`);
+    log(`robots page ${name} ${width}×${height} ${over.length ? 'OVERFLOW' : 'fits'}`);
+    await ctx.close();
+  }
+}
+/* ---------- 5. Day cycle: night sleep and morning wake-up (visual) ---------- */
+async function dayCycle() {
+  const { ctx, page, errors } = await open({ width: 1180, height: 820 });
+  await enter(page);
+  await page.evaluate(() => { const a = window.__app; a.quality.set('low'); a.clock.jumpTo(23 * 60 + 30); window.__ff(3); a.clock.setSpeed(30); window.__ff(6); a.clock.setSpeed(1); a.cameraman.view('home'); window.__ff(3); });
+  const night = await page.evaluate(() => ({ phase: window.__app.life.state.phase, charge: window.__app.life.state.charge, night: window.__app.tod.night }));
+  log(`night: ${JSON.stringify(night)}`);
+  if (!(night.night > 0.9 && night.charge != null)) problems.push('night sleep state not reached');
+  await page.waitForTimeout(1500);
+  await shot(page, 'day-night-sleep');
+  await page.evaluate(() => { const a = window.__app; a.clock.jumpTo(6 * 60 + 38); window.__ff(3); a.cameraman.flyTo(new a.THREE.Vector3(-330, 120, 40), new a.THREE.Vector3(-120, 0, -150), 0.5); window.__ff(2); });
+  const wake = await page.evaluate(() => ({ phase: window.__app.life.state.phase, power: window.__app.life.state.power, day: window.__app.clock.day }));
+  log(`wake: ${JSON.stringify(wake)}`);
+  if (wake.phase !== 'wake' || wake.day < 2) problems.push('morning wake-up not reached');
+  await page.waitForTimeout(1500);
+  await shot(page, 'day-morning-wake');
+  for (const e of errors) problems.push(`day cycle console: ${e}`);
+  await ctx.close();
+}
+
 try {
   if (!args.includes('--skip-taps')) await tapAll();
+  if (!args.includes('--skip-robots')) { await robotsPage(); await robotsSizes(); }
+  if (!args.includes('--skip-day')) await dayCycle();
   if (!args.includes('--skip-sizes')) await sizes();
 } catch (e) {
   problems.push(`fatal: ${e.message.split('\n')[0]}`);

@@ -1,0 +1,14 @@
+.joy {
+  position: fixed; left: max(24px, env(safe-area-inset-left)); bottom: calc(max(24px, env(safe-area-inset-bottom)) + 96px);
+  width: 128px; height: 128px; border-radius: 50%; z-index: 6; touch-action: none; pointer-events: auto;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.25));
+  box-shadow: 0 10px 30px rgba(11, 107, 99, 0.25), inset 0 0 0 2px rgba(18, 181, 160, 0.45);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.joy[hidden] { display: none; }
+.joy-knob {
+  position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 50%;
+  background: linear-gradient(135deg, #12b5a0, #0b6b63); box-shadow: 0 6px 16px rgba(18, 181, 160, 0.55);
+  transition: transform 80ms linear;
+}
+.joy.on .joy-knob { transition: none; }

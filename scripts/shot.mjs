@@ -38,7 +38,9 @@ page.on('console', (m) => {
 page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}`));
 try {
   await page.goto(`http://localhost:${PORT}/${query}`);
-  await page.waitForFunction(() => window.__sceneReady === true, null, { timeout: 60000 });
+  // --ready=__rpReady waits for another page's flag (robots.html).
+  const ready = (args.find((x) => x.startsWith('--ready=')) || '--ready=__sceneReady').slice(8);
+  await page.waitForFunction((k) => window[k] === true, ready, { timeout: 120000 });
   if (enter) { await page.waitForTimeout(600); await page.click('#enter-btn'); }
   // --eval="js" runs in the page before the first shot (debug experiments).
   const ev = args.find((a) => a.startsWith('--eval='));

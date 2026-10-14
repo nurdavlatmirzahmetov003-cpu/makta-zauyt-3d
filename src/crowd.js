@@ -12,7 +12,7 @@ import { ROADS } from './roads.js';
 const V = (x, z) => new THREE.Vector3(x, groundY(x, z), z);
 
 /** Walking surface height: road 0.07, raised sidewalk 0.2, lawn / plaza / apron ~0.05. */
-function groundY(x, z) {
+export function groundY(x, z) {
   for (const r of ROADS) {
     if (r.highway) continue;
     const along = r.axis === 'x' ? x : z, off = Math.abs(r.axis === 'x' ? z - r.c : x - r.c);
@@ -195,7 +195,7 @@ function buildHumanoids(scene) {
   const write = (t, camera) => {
     let nb = 0, nt = 0, nc = 0;
     list.forEach((p, i) => {
-      if (!(camera && camera.position.distanceTo(p.pos) > FAR && p.drawn)) pose(p, i, t, !!p.path && !p.resting);
+      if (!(camera && camera.position.distanceTo(p.pos) > FAR && p.drawn)) pose(p, i, t, p.manual ? !!p.manualMoving : (!!p.path && !p.resting) || !!p.returning);
       // Sleeping robots: the visor dims to a slow "breathing" glow.
       const b = p.resting && sched.sleep ? 0.18 + 0.16 * (1 + Math.sin(t * 1.6 + i)) : 1;
       if (p.visorB !== b) { p.visorB = b; im.visor.setColorAt(i, col.copy(visorCol).multiplyScalar(b)); im.visor.instanceColor.needsUpdate = true; }
@@ -224,6 +224,20 @@ function buildHumanoids(scene) {
     setSchedule(s) { sched = s; },
     update(dt, t, camera, render = true) {
       for (const p of list) {
+        if (p.manual) { if (p.manualMoving) p.phase += dt * 2.2 * 5.2; continue; } // driven by the joystick (control/drive.js)
+        if (p.returning) {
+          // Walk back to the routine after manual control (no teleport).
+          const goalPos = p.path ? p.path.at(p.s, dir.clone()) : p.pts[0];
+          const d = goalPos.clone().sub(p.pos).setY(0);
+          if (d.length() < 0.3) p.returning = false;
+          else {
+            p.pos.addScaledVector(d.normalize(), Math.min(d.length(), 1.4 * dt));
+            p.pos.y = groundY(p.pos.x, p.pos.z);
+            p.yawNow += Math.atan2(Math.sin(Math.atan2(d.x, d.z) - p.yawNow), Math.cos(Math.atan2(d.x, d.z) - p.yawNow)) * Math.min(1, dt * 6);
+            p.phase += dt * 1.4 * 5.2;
+            continue;
+          }
+        }
         if (!p.path) { p.resting = sched.sleep && p.sleeps; continue; }
         if (camera.position.distanceTo(p.pos) > FAR) continue; // far away: freeze
         const L = p.path.length, g = goal(p);
@@ -256,7 +270,7 @@ function buildHumanoids(scene) {
 }
 
 /* ---------------- Drones ---------------- */
-function makeDrone() {
+export function makeDrone() {
   const g = new THREE.Group();
   const m = mats();
   g.add(new THREE.Mesh(merge([
@@ -345,8 +359,17 @@ export function buildRobots(scene, site) {
       humans.update(dt, t, camera, write);
       for (const d of drones) {
         const u = d.userData;
+        if (u.manual) { for (const r of u.rotors) r.rotation.y += dt * 40; continue; }
         u.t += dt * u.speed;
         const [x, y, z] = u.f(u.t), [nx, , nz] = u.f(u.t + 0.02);
+        if (u.returning) {
+          // Fly back to the patrol loop smoothly after manual control.
+          const goal = new THREE.Vector3(x, y, z);
+          d.position.lerp(goal, Math.min(1, dt * 0.8));
+          if (d.position.distanceTo(goal) < 1) u.returning = false;
+          for (const r of u.rotors) r.rotation.y += dt * 40;
+          continue;
+        }
         d.position.set(x, y + Math.sin(t * 1.3 + u.t) * 0.6, z);
         d.rotation.y = Math.atan2(nx - x, nz - z);
         d.rotation.x = 0.12;

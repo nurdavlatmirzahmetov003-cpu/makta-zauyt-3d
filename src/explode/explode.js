@@ -243,7 +243,9 @@ export function createExplode({ scene, camera, world, cameraman, root }) {
   const v = new THREE.Vector3();
   function place(e, p) {
     v.copy(p).project(camera);
-    e.style.transform = `translate(${((v.x * 0.5 + 0.5) * innerWidth).toFixed(0)}px, ${((-v.y * 0.5 + 0.5) * innerHeight).toFixed(0)}px)`;
+    // Kept on screen so every label stays tappable whatever the camera does.
+    const x = Math.min(innerWidth - 230, Math.max(8, (v.x * 0.5 + 0.5) * innerWidth)), y = Math.min(innerHeight - 150, Math.max(90, (-v.y * 0.5 + 0.5) * innerHeight));
+    e.style.transform = `translate(${x.toFixed(0)}px, ${y.toFixed(0)}px)`;
     e.style.visibility = v.z < 1 ? 'visible' : 'hidden';
   }
 

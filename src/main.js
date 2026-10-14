@@ -35,6 +35,7 @@ import { buildNight } from './sim/night.js';
 import { createChat } from './chat/chat-ui.js';
 import { createGuide } from './guide/guide.js';
 import { createExplode } from './explode/explode.js';
+import { createDrive } from './control/drive.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -156,6 +157,9 @@ function buildInterface() {
   actions.guide = () => world.guide.start();
   actions.explode = () => world.explode.explodeBase();
   actions.explodeText = '🧩 Бүкіл базаны бес қабатқа бөлшектеймін! Қабатты басып, оның қызметін біліңіз.';
+  world.drive = createDrive({ camera, controls, world, cameraman, root: uiRoot, toast: (m) => ui.toast(m) });
+  actions.robotsPage = () => { location.href = './robots.html'; };
+  actions.robotsPageText = '🤖 «Роботтар әлемі» бетін ашып жатырмын…';
   chat = createChat({ root: uiRoot, app: { clock: simClock, life, economy, world, ui, tod, cameraman, actions } });
   clockUI = createClockUI({ root: uiRoot, clock: simClock, life, economy, toast: (m) => ui.toast(m), tourActive: () => world.tour?.active });
   if (DEBUG) {
@@ -228,7 +232,13 @@ async function init() {
     console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
   }
   landing.ready();
-  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, guide: world.guide, explode: world.explode, post, clock: simClock, life, economy, chat, step: stepWorld };
+  // Coming from «Роботтар әлемі» → «Зауытта көрсету»: enter at once and show that robot type.
+  const FOCUS = new URLSearchParams(location.search).get('focus');
+  if (FOCUS) {
+    document.getElementById('enter-btn').click();
+    setTimeout(() => { intro.skip(); setTimeout(() => focusRobot(FOCUS), 400); }, 300);
+  }
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, guide: world.guide, explode: world.explode, drive: world.drive, focus: focusRobot, post, clock: simClock, life, economy, chat, step: stepWorld };
   window.__sceneReady = true;
 }
 
@@ -241,6 +251,22 @@ addEventListener('resize', () => {
 
 const clock = new THREE.Clock(); // real time
 let lastT = 0, hudT = 0;
+/** Fly to (or start) the robot type chosen on the robots page. */
+function focusRobot(key) {
+  const humans = world.robots.humans.list;
+  const role = { operator: 'operator', security: 'security', lab: 'lab' }[key];
+  const building = { sewing: 'sewing', dispatch: 'dispatch', tanks: 'tanks', repair: 'repair', cleaner: 'cleaning' }[key];
+  if (key === 'guide') world.guide.start();
+  else if (role) { const p = humans.find((h) => h.role === role); if (p) ui.select({ kind: 'robot', ref: p }); }
+  else if (key === 'amr') ui.select({ kind: 'amr', ref: world.robots.amrs[0] });
+  else if (key === 'drone') ui.select({ kind: 'drone', ref: world.robots.drones[2] });
+  else if (key === 'harvester') {
+    const h = world.fields.harvester;
+    cameraman.flyTo(h.position.clone().add(new THREE.Vector3(18, 12, 18)), h.position.clone(), 2);
+    cameraman.setFollow(() => h.position, 2);
+  } else if (building) ui.select({ kind: 'building', ref: world.site.list.get(building) }, { openRoof: true });
+}
+
 /** One frame of world logic (no rendering); `dt` is real time. Also used by tests (`__app.step`). */
 function stepWorld(dt) {
   // Simulation time: scaled by the clock speed (⏸ 1× 2× 5× 10× 30×).
@@ -276,9 +302,10 @@ renderer.setAnimationLoop(() => {
   world.tour?.update(dt);
   world.guide?.update(dt);
   world.explode?.update(dt);
+  world.drive?.update(dt);
   if (!intro.active) {
     cameraman?.update(dt);
-    if (!world.tour?.playing && !world.guide?.playing) controls.update();
+    if (!world.tour?.playing && !world.guide?.playing && !world.drive?.playing) controls.update();
   }
   renderer.info.reset(); // counted over all passes of the frame
   post.render(dt);

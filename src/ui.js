@@ -25,6 +25,8 @@ const ICON = {
   search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
   features: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>',
   guide: '<circle cx="12" cy="10" r="6"/><circle cx="10" cy="10" r="1"/><circle cx="14" cy="10" r="1"/><path d="M9 18c1 1.5 5 1.5 6 0M12 16v2M8 20h8"/>',
+  drive: '<rect x="3" y="8" width="18" height="10" rx="5"/><path d="M8 11v4M6 13h4"/><circle cx="15.5" cy="12" r="1"/><circle cx="17.5" cy="14" r="1"/>',
+  world: '<rect x="6" y="7" width="12" height="10" rx="4"/><path d="M12 3v4M9.5 12h.01M14.5 12h.01M4 21h16"/>',
   explode: '<path d="M4 9l8-5 8 5-8 5z"/><path d="M4 15l8 5 8-5"/><path d="M12 14v6"/>',
   screen: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
 };
@@ -48,7 +50,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     </header>
     <nav class="dock glass" aria-label="${UI.menu}">
       <button class="dock-toggle" data-a="toggle" aria-label="${UI.menu}">${svg('menu')}</button>
-      ${[['home', 'home'], ['top', 'top'], ['tour', 'tour'], ['process', 'process'], ['buildings', 'buildings'], ['vehicles', 'vehicles'], ['robots', 'robots'], ['guide', 'guide'], ['explode', 'explode'], ['features', 'features'],
+      ${[['home', 'home'], ['top', 'top'], ['tour', 'tour'], ['process', 'process'], ['buildings', 'buildings'], ['vehicles', 'vehicles'], ['robots', 'robots'], ['guide', 'guide'], ['explode', 'explode'], ['drive', 'drive'], ['world', 'world'], ['features', 'features'],
         ['labels', 'labels'], ['roof', 'roof'], ['time', 'time'], ['quality', 'quality'], ['reset', 'reset']]
         .map(([a, ic]) => `<button class="dock-btn${a === 'tour' ? ' accent' : ''}" data-a="${a}">${svg(ic)}<span>${a === 'time' ? timeLabel('day') : UI.dock[a]}</span></button>`).join('')}
     </nav>
@@ -293,6 +295,8 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     quality: () => { pop.hidden = !pop.hidden; list.hidden = true; markQuality(); },
     features: () => { feats.hidden = !feats.hidden; list.hidden = pop.hidden = true; },
     guide: () => { select(null); list.hidden = true; world.guide?.start(); },
+    drive: () => { select(null); list.hidden = true; world.drive?.openPicker(); },
+    world: () => { location.href = './robots.html'; },
     explode: () => { list.hidden = pop.hidden = true; if (sel?.kind === 'building' && world.explode?.canExplode(sel.ref)) { const b = sel.ref; select(null); world.explode.explodeBuilding(b); } else world.explode?.togglePop(); },
     reset: () => { world.tour?.exit(); select(null); cameraman.flyTo(GATE_VIEW.clone(), GATE_TARGET.clone(), 2); },
   };
@@ -384,7 +388,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     setActiveStage,
     toast,
     onTap(x, y) {
-      if (world.tour?.active || world.guide?.active) return; // touching the view only pauses the tour / guide
+      if (world.tour?.active || world.guide?.active || world.drive?.active) return; // touching the view only pauses the tour / guide
       if (world.explode?.active) { world.explode.onTap(x, y); return; }
       if (!pop.hidden) { pop.hidden = true; return; }
       const hit = cameraman.pick(x, y);
