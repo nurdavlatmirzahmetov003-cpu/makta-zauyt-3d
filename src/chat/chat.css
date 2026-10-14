@@ -89,7 +89,7 @@ body.night .fr.pos b { color: #5dffb5; }
 .cr em { height: 6px; border-radius: 3px; background: rgba(0, 0, 0, 0.06); overflow: hidden; }
 .cr em i { display: block; height: 100%; background: #ff8a6e; }
 .cr b { font-variant-numeric: tabular-nums; font-size: 11px; }
-.ch { width: 100%; height: 86px; display: block; }
+.rep-chart { width: 100%; height: 86px; display: block; }
 .rep-cmp { font-size: 12px; font-weight: 800; color: var(--ui-accent); }
 .rep-btns { display: flex; gap: 6px; }
 .rep-btns button { flex: 1; min-height: 38px; border: 0; border-radius: 12px; background: var(--ui-accent); color: #fff !important; font-weight: 800; font-size: 12px; cursor: pointer; }

@@ -87,8 +87,8 @@ export function createReport({ economy, clock }) {
         <div class="rep-kpis"></div>
         <div class="rep-fin"></div>
         <div class="rep-costs"><h6>${R.costTitle}</h6><div class="rc"></div></div>
-        <h6>${R.chartProd}</h6><canvas class="ch ch-prod"></canvas>
-        <h6>${R.chartMoney} <span class="lg"><i style="background:${COLORS.garments}"></i>${R.revenue} <i style="background:${COLORS.cost}"></i>${R.cost}</span></h6><canvas class="ch ch-money"></canvas>
+        <h6>${R.chartProd}</h6><canvas class="rep-chart ch-prod"></canvas>
+        <h6>${R.chartMoney} <span class="lg"><i style="background:${COLORS.garments}"></i>${R.revenue} <i style="background:${COLORS.cost}"></i>${R.cost}</span></h6><canvas class="rep-chart ch-money"></canvas>
         <div class="rep-cmp"></div>
         <div class="rep-btns"><button data-r="csv">${R.csv}</button><button data-r="print">${R.print}</button></div>`;
     }

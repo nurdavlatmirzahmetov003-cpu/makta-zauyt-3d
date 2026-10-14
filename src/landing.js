@@ -37,6 +37,8 @@ function buildTitle(el, text) {
   layout();
   addEventListener('resize', layout);
   document.fonts.ready.then(layout);
+  // Measured mid-animation the letters are still rotated; settle once the last one has landed.
+  setTimeout(layout, 400 + letters.length * 55 + 950);
   return layout;
 }
 
