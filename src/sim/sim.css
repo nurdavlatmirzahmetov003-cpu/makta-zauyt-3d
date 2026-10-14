@@ -21,7 +21,7 @@
 .night-card {
   position: fixed;
   right: max(12px, env(safe-area-inset-right));
-  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 104px);
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 174px);
   display: flex; flex-direction: column; gap: 6px;
   width: min(300px, calc(100% - 24px));
   padding: 10px 14px;
@@ -70,4 +70,11 @@ body.night .kp.pos b { color: #5dffb5; }
   .cw-speeds button { min-width: 30px; padding: 0 3px; font-size: 11px; }
   .night-card { bottom: auto; top: calc(var(--top-b, 110px) + 12px); right: 12px; width: auto; left: 70px; }
   .kpi-pop { top: auto; bottom: 118px; max-height: 60vh; }
+}
+@media (min-width: 1101px) and (max-width: 1320px) {
+  .counters { gap: 5px; }
+  .counter { padding: 4px 8px 5px 7px; column-gap: 5px; }
+  .c-ico { font-size: 15px; }
+  .c-lbl { font-size: 9.5px; }
+  .c-val { font-size: 14px; }
 }

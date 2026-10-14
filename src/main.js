@@ -32,6 +32,7 @@ import { createLife } from './sim/life.js';
 import { createEconomy } from './sim/economy.js';
 import { createClockUI } from './sim/clock-ui.js';
 import { buildNight } from './sim/night.js';
+import { createChat } from './chat/chat-ui.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -114,7 +115,7 @@ const world = { scene, env: null, lake: null, fields: null, wind: null, site: nu
 // Interface modules (created once the world exists).
 let ui = null, cameraman = null, labels = null, quality = null, tod = null, hud = null;
 // Living factory (Part 2): simulation clock, day cycle, economy, clock widget, night atmosphere.
-let simClock = null, life = null, economy = null, clockUI = null, nightFx = null;
+let simClock = null, life = null, economy = null, clockUI = null, nightFx = null, chat = null;
 const post = createPost(renderer, scene, camera);
 onNight((k) => post.setNight(k));
 
@@ -136,6 +137,19 @@ function buildInterface() {
   ui = createUI({ root: uiRoot, world, camera, controls, cameraman, labels, quality, tod, economy });
   world.tour = createTour({ scene, camera, controls, world, cameraman, tod, root: uiRoot });
   ui.bindTour(world.tour);
+  // «Ақылды көмекші»: offline Kazakh chatbot; actions are the UI's own buttons and camera moves.
+  const dockClick = (a) => uiRoot.querySelector(`[data-a="${a}"]`)?.click();
+  const actions = {
+    features: () => dockClick('features'),
+    guide: () => world.tour.start(1),
+    robotsList: () => dockClick('robots'),
+    show: (id) => {
+      const b = world.site.list.get(id);
+      if (b) ui.select({ kind: 'building', ref: b });
+      else cameraman.flyTo(new THREE.Vector3(34, 26, 140), new THREE.Vector3(0, 6, 95), 2); // monument
+    },
+  };
+  chat = createChat({ root: uiRoot, app: { clock: simClock, life, economy, world, ui, tod, cameraman, actions } });
   clockUI = createClockUI({ root: uiRoot, clock: simClock, life, economy, toast: (m) => ui.toast(m), tourActive: () => world.tour?.active });
   if (DEBUG) {
     hud = document.createElement('div');
@@ -202,7 +216,7 @@ async function init() {
     console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
   }
   landing.ready();
-  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, post, clock: simClock, life, economy, step: stepWorld };
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, post, clock: simClock, life, economy, chat, step: stepWorld };
   window.__sceneReady = true;
 }
 
@@ -257,6 +271,7 @@ renderer.setAnimationLoop(() => {
   labels?.update();
   ui?.update(dt);
   clockUI?.update(dt);
+  chat?.update(dt);
   quality?.update(dt);
   if (hud && (hudT += dt) > 0.5) {
     hudT = 0;

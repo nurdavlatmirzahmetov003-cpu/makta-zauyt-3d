@@ -15,10 +15,12 @@ const { chromium } = pw;
 
 const args = process.argv.slice(2);
 const OUT = (args.find((a) => a.startsWith('--out=')) || '--out=qa-shots').slice(6);
+// --dir=path serves a copy of the build (so the project can be rebuilt while QA runs).
+const DIR = (args.find((a) => a.startsWith('--dir=')) || '--dir=docs').slice(6);
 const PORT = 4181;
 mkdirSync(OUT, { recursive: true });
 
-const server = spawn('node', ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'pipe' });
+const server = spawn('node', ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort', '--outDir', DIR], { stdio: 'pipe' });
 for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, () => { server.kill(); process.exit(1); });
 await new Promise((r) => server.stdout.on('data', (d) => String(d).includes(String(PORT)) && r()));
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
@@ -28,8 +30,7 @@ const log = (...a) => console.log('[qa]', ...a);
 
 // Simulation fast-forward (headless rendering runs at ~1 FPS, so animations are stepped manually).
 const FF = `window.__ff = (s) => { const a = __app, w = a.world; for (let i = 0; i < s * 10; i++) {
-  w.production.update(0.1); w.site.update(0.1); w.traffic.update(0.1); w.robots.update(0.1, a.camera);
-  a.tod.update(0.1); a.tour.update(0.1); if (!a.tour.playing) { a.cameraman.update(0.1); a.controls.update(); } a.ui.update(0.1); } };`;
+  a.step(0.1); a.tour.update(0.1); if (!a.tour.playing) { a.cameraman.update(0.1); a.controls.update(); } a.ui.update(0.1); } };`;
 
 async function open({ width, height, touch = true, mobile = false }) {
   const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: mobile, deviceScaleFactor: 1 });
@@ -108,6 +109,10 @@ const TAPS = [
   ['[data-a="quality"]', 0.3], ['[data-q="high"]', 0.5, () => window.__app.post.enabled, 'bloom on high'],
   ['[data-a="quality"]', 0.3], ['[data-q="mid"]', 0.5],
   ['.timeline .stage[data-n="5"]', 3], ['[data-a="reset"]', 2.5],
+  // Phase 10: clock speeds and the KPI panel.
+  ['[data-s="30"]', 2, () => window.__app.clock.speed === 30, 'speed 30×'], ['[data-s="0"]', 1, () => window.__app.clock.speed === 0, 'pause'],
+  ['[data-s="1"]', 1, () => window.__app.clock.speed === 1, 'speed 1×'],
+  ['.cw-main', 0.6, () => !document.querySelector('.kpi-pop').hidden, 'KPI panel opens'], ['[data-k="kpi-close"]', 0.3],
 ];
 
 async function tapAll() {

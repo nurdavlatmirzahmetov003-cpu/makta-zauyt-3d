@@ -18,8 +18,8 @@
 | Phase | Status |
 |---|---|
 | 10 — Living factory: clock, day/night cycle, economy | ✅ done |
-| 11 — «Ақылды көмекші» chatbot + daily report | ⏳ next |
-| 12 — Robot guide «Маржан» + «Бөлшектеп көру» | — |
+| 11 — «Ақылды көмекші» chatbot + daily report | ✅ done |
+| 12 — Robot guide «Маржан» + «Бөлшектеп көру» | ⏳ next |
 | 13 — Robots page, robot chat, manual control, final QA | — |
 
 ## Phase 0 — done
@@ -185,6 +185,13 @@ Deviations from the brief (deliberate):
 - **UI**: clock widget in the top bar (sun / dawn / dusk / moon icon, `07:42`, «1-күн», phase name, ⏸ 1× 2× 5× 10× 30×; Space = pause, keys 1–5 = speeds); the top-bar counters now read today's totals from the engine; tapping the clock or counters opens «📊 N-күн · HH:MM жағдайы бойынша» with the 12 Kazakh KPIs. `src/sim/format.js`: `Intl.NumberFormat('kk-KZ')` with a manual fallback (`12 450 000 ₸`, `3,8 т`, `1 284 л`). Panels below the top bar follow its measured height (`--top-b`), since the bar wraps on narrow screens.
 - Screenshots: `screenshots/p10-day-kpi.png` (12:40, KPI panel), `p10-night.png` (01:33, sleeping factory, charging card), `p10-wake.png` (06:39, light wave + morning toast).
 
+## Phase 11 — done (Part 2)
+- `src/chat/intents.js` — offline Kazakh intent engine: lower case, punctuation stripped, Russian / informal words mapped («отчет/отчёт» → есеп, «прибыль» → пайда, «расход» → шығын, «скорость» → жылдамдық, «5х» → 5x), **stem / prefix matching** so suffixes work (`табыс*`, `шығын*`, `энерг*|қуат*`, `робот*`…); commands are matched before questions. Note: `\b` does not work for Cyrillic in JS, so word edges use `(^|\s)`. Building names are matched with IDF-weighted stems plus aliases (асхана, зертхана, көрме, күзет/қақпа, монумент…). A node check of 42 phrasings (all quick chips, commands, small talk, Russian words, a nonsense fallback) gives the expected intent for every one.
+- `src/chat/bot.js` — replies from the live simulation: бүгінгі есеп (card), табыс (by product), шығын (largest part), таза пайда, мақта / май / киім, энергия (solar + wind MW, MWh, 0 ₸ electricity, grid saving), роботтар (active by type), сағат, ең белсенді цех (flies there), зауыт туралы, 15 ерекшелік (opens the panel), көмек; commands: speed (number or next step), тоқтат, қалыпты жылдамдық, түнге / таңға / күндізге ауыстыр, гидпен саяхат (the 360° tour until Phase 12 adds «Маржан»), «[ғимарат] көрсет» (flies the camera); small talk сәлем / рахмет / сен кімсің / қалайсың; fallback «Кешіріңіз, түсінбедім 🤔 …» with 4 chips. «Бөлшектеп көру» and «Роботтар әлемі» answer that they arrive in the next update (hooks `actions.explode` / `actions.robotsPage` for Phases 12–13).
+- `src/chat/chat-ui.js` + `chat.css` — glowing robot-face button «Ақылды көмекші» (bottom right, unread badge), frosted-glass panel (bottom sheet on phones), bot avatar + typing dots + typewriter text, teal user bubbles, game-time timestamps, the 8 quick-reply chips, per-message suggestion chips. Voice: `SpeechRecognition` / `webkitSpeechRecognition` with `lang='kk-KZ'` (button hidden when unsupported); spoken replies via `speechSynthesis` only when a `kk` voice exists, with a mute toggle.
+- `src/chat/report.js` — «📊 N-күн · HH:MM жағдайы бойынша» card that **updates every second** while open: 6 KPIs, Табыс / Шығын / Таза пайда (green / red), revenue-vs-cost and revenue-by-product share bars, cost breakdown with mini bars, two canvas charts (raw cotton per hour, cumulative revenue vs cost lines), «Кешегімен салыстырғанда: ±N%» when a previous day exists (same hour), «⬇️ CSV жүктеу» (UTF-8 **with BOM**, `;` separated, KPIs + costs + 24 hourly rows) and «🖨️ Басып шығару» (clean print page in a hidden frame). At 21:00 the bot posts «🌙 Бүгінгі жұмыс аяқталды! Қысқаша есеп:» with the card.
+- Screenshots: `screenshots/p11-report.png` (report card top), `p11-charts.png` (charts and buttons), `p11-chat.png` (answers + fallback chips).
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
@@ -199,4 +206,4 @@ Deviations from the brief (deliberate):
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Part 2, Phase 11 — «Ақылды көмекші» chatbot (offline Kazakh intent engine) and the live daily report card with charts, CSV and print. Phase 9's merge into `main` is still open.
+Part 2, Phase 12 — robot guide «Маржан» (flying guide, 18 stops) and «Бөлшектеп көру» (exploded building + whole-base layers).
