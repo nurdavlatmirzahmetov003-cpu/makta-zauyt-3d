@@ -30,7 +30,8 @@ const log = (...a) => console.log('[qa]', ...a);
 
 // Simulation fast-forward (headless rendering runs at ~1 FPS, so animations are stepped manually).
 const FF = `window.__ff = (s) => { const a = __app, w = a.world; for (let i = 0; i < s * 10; i++) {
-  a.step(0.1); a.tour.update(0.1); if (!a.tour.playing) { a.cameraman.update(0.1); a.controls.update(); } a.ui.update(0.1); } };`;
+  a.step(0.1); a.tour.update(0.1); a.guide.update(0.1); a.explode.update(0.1);
+  if (!a.tour.playing && !a.guide.playing) { a.cameraman.update(0.1); a.controls.update(); } a.ui.update(0.1); a.chat.update(0.1); } };`;
 
 async function open({ width, height, touch = true, mobile = false }) {
   const ctx = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: mobile, deviceScaleFactor: 1 });
@@ -113,6 +114,13 @@ const TAPS = [
   ['[data-s="30"]', 2, () => window.__app.clock.speed === 30, 'speed 30×'], ['[data-s="0"]', 1, () => window.__app.clock.speed === 0, 'pause'],
   ['[data-s="1"]', 1, () => window.__app.clock.speed === 1, 'speed 1×'],
   ['.cw-main', 0.6, () => !document.querySelector('.kpi-pop').hidden, 'KPI panel opens'], ['[data-k="kpi-close"]', 0.3],
+  // Phases 11–12: chat, report, guide, exploded views.
+  ['.chat-fab', 1.5, () => window.__app.chat.isOpen, 'chat opens'], ['.chat-chips .chip >> nth=0', 4, () => !!document.querySelector('.chat .rep'), 'report card'],
+  ['.chat .c-close', 0.5],
+  ['[data-a="guide"]', 5, () => window.__app.guide.active, 'guide starts'], ['.guide [data-g="next"]', 5, () => window.__app.guide.stop === 2, 'guide next'],
+  ['.guide [data-g="end"]', 1, () => !window.__app.guide.active, 'guide ends'],
+  ['[data-a="explode"]', 0.5], ['[data-x="whole"]', 3, () => window.__app.explode.mode === 'base', 'base layers'],
+  ['.xp-label.layer >> nth=2', 0.5, () => !document.querySelector('.xp-card').hidden, 'layer info'], ['[data-x="assemble"]', 3, () => !window.__app.explode.active, 'assembled'],
 ];
 
 async function tapAll() {
