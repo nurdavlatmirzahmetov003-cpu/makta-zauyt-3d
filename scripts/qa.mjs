@@ -122,7 +122,7 @@ const TAPS = [
   ['[data-a="guide"]', 5, () => window.__app.guide.active, 'guide starts'], ['.guide [data-g="next"]', 5, () => window.__app.guide.stop === 2, 'guide next'],
   ['.guide [data-g="end"]', 1, () => !window.__app.guide.active, 'guide ends'],
   ['[data-a="explode"]', 0.5], ['[data-x="whole"]', 3, () => window.__app.explode.mode === 'base', 'base layers'],
-  ['.xp-label.layer >> nth=2', 0.5, () => !document.querySelector('.xp-card').hidden, 'layer info'], ['[data-x="assemble"]', 3, () => !window.__app.explode.active, 'assembled'],
+  ['.xp-label.layer >> nth=2 >> span', 0.5, () => !document.querySelector('.xp-card').hidden, 'layer info'], ['[data-x="assemble"]', 3, () => !window.__app.explode.active, 'assembled'],
   // Phase 13: CSV report, robot driving with the joystick, link to «Роботтар әлемі».
   ['csv', 0.5], ['.chat .c-close', 0.3],
   ['[data-a="drive"]', 0.5], ['[data-dv="humanoid"]', 3, () => window.__app.drive.active, 'drive a humanoid'],
