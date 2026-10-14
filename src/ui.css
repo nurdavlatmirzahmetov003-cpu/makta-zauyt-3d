@@ -153,6 +153,7 @@ body.night .pill { background: rgba(255, 255, 255, 0.06); }
 .stats span { font-size: 11px; color: var(--ui-sub); font-weight: 600; }
 .stats b { font-size: 15px; font-variant-numeric: tabular-nums; }
 .fact { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(245, 192, 74, 0.14); font-size: 13px; line-height: 1.45; }
+.wide-btn.alt { background: linear-gradient(90deg, #c98a10, #f5c04a); color: #2a1d00 !important; }
 .wide-btn {
   display: flex;
   align-items: center;

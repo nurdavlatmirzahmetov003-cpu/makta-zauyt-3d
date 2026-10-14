@@ -24,6 +24,8 @@ const ICON = {
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   search: '<circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/>',
   features: '<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>',
+  guide: '<circle cx="12" cy="10" r="6"/><circle cx="10" cy="10" r="1"/><circle cx="14" cy="10" r="1"/><path d="M9 18c1 1.5 5 1.5 6 0M12 16v2M8 20h8"/>',
+  explode: '<path d="M4 9l8-5 8 5-8 5z"/><path d="M4 15l8 5 8-5"/><path d="M12 14v6"/>',
   screen: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
 };
 const svg = (k, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`;
@@ -46,7 +48,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     </header>
     <nav class="dock glass" aria-label="${UI.menu}">
       <button class="dock-toggle" data-a="toggle" aria-label="${UI.menu}">${svg('menu')}</button>
-      ${[['home', 'home'], ['top', 'top'], ['tour', 'tour'], ['process', 'process'], ['buildings', 'buildings'], ['vehicles', 'vehicles'], ['robots', 'robots'], ['features', 'features'],
+      ${[['home', 'home'], ['top', 'top'], ['tour', 'tour'], ['process', 'process'], ['buildings', 'buildings'], ['vehicles', 'vehicles'], ['robots', 'robots'], ['guide', 'guide'], ['explode', 'explode'], ['features', 'features'],
         ['labels', 'labels'], ['roof', 'roof'], ['time', 'time'], ['quality', 'quality'], ['reset', 'reset']]
         .map(([a, ic]) => `<button class="dock-btn${a === 'tour' ? ' accent' : ''}" data-a="${a}">${svg(ic)}<span>${a === 'time' ? timeLabel('day') : UI.dock[a]}</span></button>`).join('')}
     </nav>
@@ -165,7 +167,8 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
         <div class="sec"><h5>${UI.card.io}</h5>${pills(info.in || '—', info.out || '—')}</div>
         <div class="stats"><div><span>🤖 ${UI.card.robots}</span><b>${info.robots ?? 0}</b></div><div><span>⚡ ${UI.card.energy}</span><b>${esc(info.energy || '—')}</b></div></div>
         ${info.fact ? `<div class="fact">💡 <b>${UI.card.fact}:</b> ${esc(info.fact)}</div>` : ''}
-        ${b.roof ? `<button class="wide-btn" data-a="card-roof">${svg('roof')}<span>${b.isOpen ? UI.dock.roofClose : UI.dock.roof}</span></button>` : ''}`;
+        ${b.roof ? `<button class="wide-btn" data-a="card-roof">${svg('roof')}<span>${b.isOpen ? UI.dock.roofClose : UI.dock.roof}</span></button>` : ''}
+        ${world.explode?.canExplode(b) ? `<button class="wide-btn alt" data-a="card-explode">${svg('explode')}<span>${UI.explodeBtn}</span></button>` : ''}`;
     } else if (e.kind === 'vehicle') {
       const v = e.ref, info = VEHICLE_INFO[v.name] || {};
       html = `
@@ -289,6 +292,8 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     time: () => tod.cycle(),
     quality: () => { pop.hidden = !pop.hidden; list.hidden = true; markQuality(); },
     features: () => { feats.hidden = !feats.hidden; list.hidden = pop.hidden = true; },
+    guide: () => { select(null); list.hidden = true; world.guide?.start(); },
+    explode: () => { list.hidden = pop.hidden = true; if (sel?.kind === 'building' && world.explode?.canExplode(sel.ref)) { const b = sel.ref; select(null); world.explode.explodeBuilding(b); } else world.explode?.togglePop(); },
     reset: () => { world.tour?.exit(); select(null); cameraman.flyTo(GATE_VIEW.clone(), GATE_TARGET.clone(), 2); },
   };
   dock.addEventListener('click', (ev) => {
@@ -309,6 +314,7 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
       cameraman.flyTo(world.showroom.view.pos.clone(), world.showroom.view.target.clone(), 2.6);
     }
     if (a === 'card-roof') toggleRoof();
+    if (a === 'card-explode' && sel?.kind === 'building') { const b = sel.ref; select(null); world.explode.explodeBuilding(b); }
     if (a === 'card-follow' && sel) {
       if (cameraman.following) cameraman.setFollow(null);
       else select(sel);
@@ -378,7 +384,8 @@ export function createUI({ root, world, camera, controls, cameraman, labels, qua
     setActiveStage,
     toast,
     onTap(x, y) {
-      if (world.tour?.active) return; // touching the view only pauses the tour
+      if (world.tour?.active || world.guide?.active) return; // touching the view only pauses the tour / guide
+      if (world.explode?.active) { world.explode.onTap(x, y); return; }
       if (!pop.hidden) { pop.hidden = true; return; }
       const hit = cameraman.pick(x, y);
       if (hit) select({ kind: hit.kind, ref: hit.ref });

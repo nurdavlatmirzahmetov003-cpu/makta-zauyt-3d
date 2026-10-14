@@ -119,7 +119,8 @@ async function tapAll() {
   const { ctx, page, errors } = await open({ width: 1180, height: 820 });
   await glyphCheck(page);
   await enter(page);
-  await page.evaluate(() => window.__app.quality.set('low')); // faster software rendering
+  // Faster software rendering; the sim clock is paused so time-of-day checks are deterministic (07:4x).
+  await page.evaluate(() => { window.__app.quality.set('low'); window.__app.clock.setSpeed(0); });
   let i = 0;
   for (const [sel, ff, check, label] of TAPS) {
     i++;

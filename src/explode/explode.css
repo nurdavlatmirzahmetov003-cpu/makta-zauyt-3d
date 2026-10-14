@@ -1,0 +1,41 @@
+/* ===================== «Бөлшектеп көру» (Phase 12) ===================== */
+body.exploded #ui .card, body.exploded #ui .ticker, body.exploded .labels-layer { display: none !important; }
+.xp-pop {
+  position: fixed; left: calc(max(12px, env(safe-area-inset-left)) + 252px); top: calc(var(--top-b, 68px) + 14px);
+  width: min(340px, calc(100% - 24px)); padding: 14px; pointer-events: auto; background: var(--ui-glass-strong); z-index: 3;
+  animation: card-in 260ms ease;
+}
+.xp-pop p { margin: 0 0 10px; font-size: 13px; line-height: 1.45; }
+.xp-pop button, .xp-bar button {
+  min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 12.5px;
+  background: linear-gradient(90deg, #0b6b63, #12b5a0); color: #fff !important; width: 100%;
+}
+.xp-bar {
+  position: fixed; left: 50%; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 64px); transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 16px; pointer-events: auto; z-index: 3;
+  max-width: calc(100% - 24px);
+}
+.xp-bar span { font-size: 12.5px; font-weight: 600; color: var(--ui-sub); }
+.xp-bar button { width: auto; flex: none; background: linear-gradient(90deg, #c98a10, #f5c04a); color: #2a1d00 !important; }
+.xp-card {
+  position: fixed; right: max(12px, env(safe-area-inset-right)); top: calc(var(--top-b, 68px) + 14px);
+  width: min(340px, calc(100% - 24px)); max-height: calc(100% - 230px); overflow-y: auto; padding: 14px 16px 16px;
+  pointer-events: auto; background: var(--ui-glass-strong); z-index: 3; animation: card-in 280ms ease;
+}
+.xp-card h2 { margin: 8px 0 6px; font-family: var(--font-display); font-size: 16px; }
+.xp-labels { position: fixed; inset: 0; pointer-events: none; z-index: 2; }
+.xp-label { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; transition: opacity 200ms ease; }
+.xp-label::before { content: ''; position: absolute; left: 0; top: 0; width: 26px; height: 2px; background: rgba(127, 251, 233, 0.9); transform: translateY(-1px); }
+.xp-label span {
+  position: absolute; left: 26px; top: 0; transform: translateY(-50%); white-space: nowrap;
+  padding: 5px 10px; border-radius: 10px; background: rgba(11, 107, 99, 0.88); color: #fff;
+  font-weight: 700; font-size: 11.5px; box-shadow: 0 0 0 1px rgba(127, 251, 233, 0.5);
+}
+.xp-label.layer span { font-family: var(--font-display); font-size: 13px; padding: 7px 12px; }
+.xp-label.dim { opacity: 0.3; }
+@media (max-width: 760px) {
+  .xp-pop { left: 12px; top: auto; bottom: 120px; }
+  .xp-card { left: 12px; right: 12px; width: auto; top: auto; bottom: 120px; max-height: 42vh; }
+  .xp-bar span { display: none; }
+  .xp-label span { font-size: 10px; }
+}

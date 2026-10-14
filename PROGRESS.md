@@ -19,8 +19,8 @@
 |---|---|
 | 10 — Living factory: clock, day/night cycle, economy | ✅ done |
 | 11 — «Ақылды көмекші» chatbot + daily report | ✅ done |
-| 12 — Robot guide «Маржан» + «Бөлшектеп көру» | ⏳ next |
-| 13 — Robots page, robot chat, manual control, final QA | — |
+| 12 — Robot guide «Маржан» + «Бөлшектеп көру» | ✅ done |
+| 13 — Robots page, robot chat, manual control, final QA | ⏳ next |
 
 ## Phase 0 — done
 - Vite 8 + Three.js 0.170.0 (pinned). `vite.config.js`: `base: './'`, `outDir: 'docs'`. `docs/` is committed (Pages backup source).
@@ -192,6 +192,15 @@ Deviations from the brief (deliberate):
 - `src/chat/report.js` — «📊 N-күн · HH:MM жағдайы бойынша» card that **updates every second** while open: 6 KPIs, Табыс / Шығын / Таза пайда (green / red), revenue-vs-cost and revenue-by-product share bars, cost breakdown with mini bars, two canvas charts (raw cotton per hour, cumulative revenue vs cost lines), «Кешегімен салыстырғанда: ±N%» when a previous day exists (same hour), «⬇️ CSV жүктеу» (UTF-8 **with BOM**, `;` separated, KPIs + costs + 24 hourly rows) and «🖨️ Басып шығару» (clean print page in a hidden frame). At 21:00 the bot posts «🌙 Бүгінгі жұмыс аяқталды! Қысқаша есеп:» with the card.
 - Screenshots: `screenshots/p11-report.png` (report card top), `p11-charts.png` (charts and buttons), `p11-chat.png` (answers + fallback chips).
 
+## Phase 12 — done (Part 2)
+- `src/guide/marzhan.js` — «Маржан»: rounded white body, dark face screen with blinking / talking teal eyes and smile, gold antenna tips, gold cotton-boll chest emblem, little arms (right arm gestures), gold thruster ring + flickering hover glow, headlight lens and light cone (on at night). Reused by Phase 13.
+- `src/guide/guide.js` + `guide.css` — dock button «ГИДПЕН САЯХАТ» (and the chat chip «🧭 Гидпен саяхат»): Маржан flies along centripetal Catmull-Rom curves **above the roofs** (cruise ≥ 58 m) to the 18 stops (texts verbatim from PROMPT2.md; framing per stop, the field stop follows the real harvester), the camera chases it, then orbits the object 360° while Маржан hovers 4 m out on the camera side, turns to the viewer, gestures and "talks" (typewriter text, optional kk `speechSynthesis`). Highlight brackets + pulsing ground ring + label on each object; dialogue panel with avatar, «3 / 18», progress bar, «◀ Алдыңғы», ⏸ / ▶, «Келесі ▶», «✕ Аяқтау»; auto-advance after the text is read (6–9 s + typing). Touching the view pauses and gives manual orbit; ▶ resumes with a blend. Runs on real time, so it works at any sim speed.
+- `src/explode/explode.js` + `explode.css` — «БӨЛШЕКТЕП КӨРУ»:
+  - **A) Building**: the info card of a production building has «🧩 Бөлшектеу». The building separates over 1.2 s (easeOutBack) into the 11 parts of the table (names, functions and PC analogies verbatim): the real roof and solar meshes, the real interior meshes sorted by material (floor, conveyors, steel frame, machines, robot arms), its **own wall triangles copied out of the merged layer batch** (the batch records per-building vertex ranges; the originals are collapsed while apart and restored after), stand-ins for its clean-air towers and fans (sharing the instanced geometry), plus generated frame columns, sensors / cameras, colour-coded cables and pipes and a foundation slab. Floating labels with leader lines; tapping a part (or its label) highlights it, ghosts the others and opens «Атауы / Қызметі / 💻 Компьютерде бұл — … / Қызықты дерек». «Құрастыру» reverses the animation.
+  - **B) Whole base**: «Бүкіл базаны бөлшектеу» (dock button popover or the chat) lifts the base into 5 tinted, labelled layers 120 m apart: 🌿 Табиғат, ⚡ Энергия, 🏭 Өндіріс, 🚚 Логистика, 🧠 Басқару. Objects were tagged with `userData.layer` while the scene was built (each loading step tags what it adds; building batches are split per layer) and moved into five groups once — only group positions animate, no geometry is rebuilt. The simulation keeps running, so vehicles drive on the floating logistics layer and robots walk on theirs. Tapping a layer explains it with its PC analogy (корпус / аналық тақта, қуат блогы, процессор, шина / жад, операциялық жүйе).
+- The building batch split per layer costs a few extra draw calls at rest.
+- Screenshots: `screenshots/p12-guide.png` (stop 2, the gate), `p12-explode-part.png` (the ginning hall apart, «Өндірістік машиналар» selected), `p12-layers.png` (the five base layers).
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
@@ -206,4 +215,4 @@ Deviations from the brief (deliberate):
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Part 2, Phase 12 — robot guide «Маржан» (flying guide, 18 stops) and «Бөлшектеп көру» (exploded building + whole-base layers).
+Part 2, Phase 13 — robots page (`robots.html`), robot chat and commands, manual control, final Part 2 QA.

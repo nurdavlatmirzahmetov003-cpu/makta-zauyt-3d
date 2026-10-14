@@ -132,10 +132,12 @@ export function worldUV(geo, tile) {
  * so a whole district costs one draw call per material.
  */
 export class Batch {
-  constructor() { this.parts = new Map(); }
+  constructor() { this.parts = new Map(); this.tags = new Map(); this.tag = null; }
+  /** Geometries added while `tag` is set are recorded as vertex ranges (mesh.userData.ranges). */
   add(key, ...geos) {
-    if (!this.parts.has(key)) this.parts.set(key, []);
+    if (!this.parts.has(key)) { this.parts.set(key, []); this.tags.set(key, []); }
     this.parts.get(key).push(...geos);
+    this.tags.get(key).push(...geos.map(() => this.tag));
   }
   build(materials, tiles, parent, { castShadow = true, receiveShadow = true, name = '' } = {}) {
     const meshes = {};
@@ -148,7 +150,19 @@ export class Batch {
         if (!geo.attributes.normal) geo.computeVertexNormals();
         return tiles[key] ? worldUV(geo, tiles[key]) : geo;
       });
+      // Vertex ranges per tag (merge keeps the order), used to lift one building out of a merged mesh.
+      const ranges = {};
+      let start = 0;
+      prepared.forEach((g, i) => {
+        const tag = this.tags.get(key)[i], n = g.attributes.position.count;
+        if (tag != null) {
+          const list = (ranges[tag] ||= []), last = list[list.length - 1];
+          if (last && last[0] + last[1] === start) last[1] += n; else list.push([start, n]);
+        }
+        start += n;
+      });
       const mesh = new THREE.Mesh(merge(prepared), mat);
+      mesh.userData.ranges = ranges;
       mesh.castShadow = castShadow && !mat.transparent;
       mesh.receiveShadow = receiveShadow;
       mesh.name = `${name}:${key}`;
@@ -156,6 +170,7 @@ export class Batch {
       meshes[key] = mesh;
     }
     this.parts.clear();
+    this.tags.clear();
     return meshes;
   }
 }

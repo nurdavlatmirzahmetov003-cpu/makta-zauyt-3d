@@ -172,7 +172,7 @@ export const UI = {
   dock: {
     home: 'БАСТЫ КӨРІНІС', top: 'ЖОҒАРЫДАН КӨРУ', tour: 'ЗАУЫТҚА КІРУ (360° ТУР)', process: 'ӨНДІРІС ПРОЦЕСІ',
     buildings: 'ҒИМАРАТТАР', vehicles: 'КӨЛІКТЕР', robots: 'РОБОТТАР', labels: 'БАРЛЫҚ АТАУЛАР',
-    roof: 'ШАТЫРДЫ АШУ', roofClose: 'ШАТЫРДЫ ЖАБУ', time: 'КҮН / КҮН БАТУ / ТҮН', quality: 'САПА', reset: 'КАМЕРАНЫ ҚАЙТАРУ', features: '15 ЕРЕКШЕЛІК',
+    roof: 'ШАТЫРДЫ АШУ', roofClose: 'ШАТЫРДЫ ЖАБУ', time: 'КҮН / КҮН БАТУ / ТҮН', quality: 'САПА', reset: 'КАМЕРАНЫ ҚАЙТАРУ', features: '15 ЕРЕКШЕЛІК', guide: 'ГИДПЕН САЯХАТ', explode: 'БӨЛШЕКТЕП КӨРУ',
   },
   time: { day: 'КҮН', sunset: 'КҮН БАТУ', night: 'ТҮН' },
   quality: { title: 'Сурет сапасы', low: 'Төмен', mid: 'Орташа', high: 'Жоғары', auto: 'Кадр жиілігі төмендеді — сапа автоматты түрде азайтылды' },
@@ -189,6 +189,7 @@ export const UI = {
   vehicleTag: 'Электрлі · жүргізушісіз · лидар',
   tourSoon: 'Зауыт ішіне саяхат басталды',
   featuresLed: 'Көрме залындағы LED экранды көру',
+  explodeBtn: '🧩 Бөлшектеу',
 };
 
 // Info cards for every building: function, role in the chain, input → output, robots, energy, fun fact.

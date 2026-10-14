@@ -344,10 +344,20 @@ class Building {
  * Builds every regular production building of the site plan.
  * @returns {{ list: Map<string, Building>, update(dt), props }}
  */
+/** Whole-base layers for «Бөлшектеп көру» (production / logistics / control / energy; nature is the rest). */
+export const LAYER_OF = {
+  raw: 'logistics', seed: 'logistics', bales: 'logistics', goods: 'logistics', dispatch: 'logistics', trucks: 'logistics',
+  admin: 'control', lab: 'control', guard: 'control', robots: 'control', repair: 'control', showroom: 'control',
+  canteen: 'control', dorm: 'control', park: 'control', shop: 'control', energy: 'energy', biogas: 'energy',
+};
+export const layerOf = (id) => LAYER_OF[id] || 'production';
+
 export function buildBuildings(scene, signs, specials = {}) {
   const m = mats();
   const materials = { ...m, sign: signs.material };
-  const S = new Batch();
+  // One merged batch per layer; each building's geometry is tagged with its id.
+  const batches = { production: new Batch(), logistics: new Batch(), control: new Batch(), energy: new Batch() };
+  const batchFor = (id) => { const B = batches[layerOf(id)]; B.tag = id; return B; };
   const props = new RoofProps(scene);
   const list = new Map();
   for (const raw of BUILDINGS) {
@@ -355,12 +365,14 @@ export function buildBuildings(scene, signs, specials = {}) {
     const interior = new THREE.Group();
     interior.name = `interior:${spec.id}`;
     interior.visible = false;
+    interior.userData.layer = layerOf(spec.id);
     scene.add(interior);
+    const S = batchFor(spec.id);
     if (spec.special) {
       const make = specials[spec.special];
       if (!make) continue;
       const b = make(spec, { S, materials, props, interior, scene, signs, Building, finishRoof });
-      if (b) list.set(spec.id, b);
+      if (b) { b.roof && (b.roof.userData.layer = layerOf(spec.id)); list.set(spec.id, b); }
       continue;
     }
     const { glassTop, top } = buildWalls(spec, S);
@@ -391,13 +403,22 @@ export function buildBuildings(scene, signs, specials = {}) {
       S.add('dark', sg.back);
     }
     finishRoof(R, materials, roof, spec.id);
+    roof.userData.layer = layerOf(spec.id);
     scene.add(roof);
     list.set(spec.id, new Building(spec, roof, interior, props));
   }
-  S.build(materials, TILE, scene, { name: 'buildings' });
+  const wallMeshes = [];
+  for (const [layer, B] of Object.entries(batches)) {
+    for (const mesh of Object.values(B.build(materials, TILE, scene, { name: `buildings:${layer}` }))) {
+      mesh.userData.layer = layer;
+      wallMeshes.push(mesh);
+    }
+  }
   props.finish();
+  for (const im of [props.towers, props.rings, props.caps, props.housings, props.blades]) im.userData.layer = 'production';
   return {
     list,
+    wallMeshes,
     props,
     /** `dt` real time (roof fades), `fanDt` sim time for the rooftop fans, `powerOf(id)` 0…1. */
     update(dt, fanDt = dt, powerOf = null) {

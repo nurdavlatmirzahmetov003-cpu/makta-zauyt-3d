@@ -1,0 +1,48 @@
+/* ===================== «Маржан» guide (Phase 12) ===================== */
+body.guiding #ui .bottombar, body.guiding #ui .card, body.guiding .night-card, body.guiding .chat-fab { display: none !important; }
+.guide {
+  position: fixed;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(760px, calc(100% - 24px));
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  gap: 4px 14px;
+  padding: 14px 16px 12px;
+  pointer-events: auto;
+  background: var(--ui-glass-strong);
+  z-index: 4;
+  animation: feat-in 420ms cubic-bezier(.2, .8, .2, 1);
+}
+.g-av { grid-row: 1 / 3; width: 64px; height: 64px; border-radius: 20px; background: linear-gradient(135deg, #0b6b63, #12b5a0); display: grid; place-items: center; box-shadow: 0 8px 22px rgba(18, 181, 160, 0.45); }
+.g-av svg { width: 52px; height: 52px; }
+.g-top { display: flex; align-items: baseline; gap: 8px; }
+.g-top b { font-family: var(--font-display); font-size: 15px; }
+.g-role { font-size: 11px; font-weight: 700; color: var(--ui-sub); }
+.g-step { margin-left: auto; font-family: var(--font-display); font-size: 13px; font-weight: 800; color: var(--ui-accent); font-variant-numeric: tabular-nums; }
+.g-title { margin: 2px 0 2px; font-size: 13px; font-weight: 800; color: var(--ui-accent); text-transform: uppercase; letter-spacing: 0.04em; }
+.g-text { margin: 0; min-height: 3.1em; font-size: 15px; line-height: 1.5; }
+.g-bar { height: 3px; margin-top: 8px; border-radius: 2px; background: var(--ui-chip); overflow: hidden; }
+.g-bar i { display: block; height: 100%; background: linear-gradient(90deg, #12b5a0, #f5c04a); transform-origin: left; transition: transform 500ms ease; }
+.g-ctrl { grid-column: 2; display: flex; gap: 6px; margin-top: 4px; }
+.g-ctrl button { display: flex; align-items: center; gap: 6px; min-height: 42px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--ui-chip); font-weight: 700; font-size: 12.5px; cursor: pointer; }
+.g-ctrl svg { width: 18px; height: 18px; }
+.g-ctrl .main { min-width: 56px; justify-content: center; background: linear-gradient(90deg, #0b6b63, #12b5a0); color: #fff !important; }
+.guide.paused .g-ctrl .main { background: linear-gradient(90deg, #c98a10, #f5c04a); }
+.g-ctrl .end { margin-left: auto; background: transparent; }
+.guide-label {
+  position: fixed; left: 0; top: 0; z-index: 3; pointer-events: none;
+  padding: 6px 12px; border-radius: 12px; background: rgba(11, 107, 99, 0.88); color: #fff;
+  font-family: var(--font-display); font-weight: 700; font-size: 12px; letter-spacing: 0.04em; white-space: nowrap;
+  box-shadow: 0 0 0 2px rgba(127, 251, 233, 0.55), 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+.guide-label::after { content: ''; position: absolute; left: 50%; bottom: -16px; width: 2px; height: 16px; background: rgba(127, 251, 233, 0.9); }
+@media (max-width: 760px) {
+  .guide { grid-template-columns: 1fr; padding: 12px; }
+  .g-av { display: none; }
+  .g-ctrl { grid-column: 1; }
+  .g-ctrl button span { display: none; }
+  .g-text { font-size: 14px; }
+}

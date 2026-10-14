@@ -33,6 +33,8 @@ import { createEconomy } from './sim/economy.js';
 import { createClockUI } from './sim/clock-ui.js';
 import { buildNight } from './sim/night.js';
 import { createChat } from './chat/chat-ui.js';
+import { createGuide } from './guide/guide.js';
+import { createExplode } from './explode/explode.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
@@ -149,6 +151,11 @@ function buildInterface() {
       else cameraman.flyTo(new THREE.Vector3(34, 26, 140), new THREE.Vector3(0, 6, 95), 2); // monument
     },
   };
+  world.guide = createGuide({ scene, camera, controls, world, cameraman, tod, root: uiRoot });
+  world.explode = createExplode({ scene, camera, world, cameraman, root: uiRoot });
+  actions.guide = () => world.guide.start();
+  actions.explode = () => world.explode.explodeBase();
+  actions.explodeText = '🧩 Бүкіл базаны бес қабатқа бөлшектеймін! Қабатты басып, оның қызметін біліңіз.';
   chat = createChat({ root: uiRoot, app: { clock: simClock, life, economy, world, ui, tod, cameraman, actions } });
   clockUI = createClockUI({ root: uiRoot, clock: simClock, life, economy, toast: (m) => ui.toast(m), tourActive: () => world.tour?.active });
   if (DEBUG) {
@@ -200,13 +207,18 @@ async function init() {
     setTimeout(() => document.querySelector('.font-debug')?.remove(), 5000);
   }
   landing.progress(1 / total);
+  // «Бөлшектеп көру» whole-base layers: objects each step adds to the scene get its layer tag.
+  const STEP_LAYER = ['', 'nature', 'nature', 'nature', 'logistics', 'production', 'control', 'control', 'logistics', 'logistics', 'control', 'nature', 'energy', 'energy', ''];
   for (let i = 0; i < steps.length; i++) {
     landing.progress((i + 1) / total, steps[i][0]);
     await nextFrame();
+    const before = new Set(scene.children);
     steps[i][1]();
+    if (STEP_LAYER[i]) for (const o of scene.children) if (!before.has(o) && !o.userData.layer) o.userData.layer = STEP_LAYER[i];
     // Let each message be readable even when a step is instant.
     await new Promise((r) => setTimeout(r, 220));
   }
+  world.explode?.collect(); // tagged objects into the five layer groups (positions unchanged)
   landing.progress(1, LOADING_STEPS[3]);
   await nextFrame();
   renderer.compile(scene, camera);
@@ -216,7 +228,7 @@ async function init() {
     console.info('[world] draw calls', renderer.info.render.calls, 'triangles', renderer.info.render.triangles);
   }
   landing.ready();
-  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, post, clock: simClock, life, economy, chat, step: stepWorld };
+  if (DEBUG) window.__app = { THREE, scene, camera, controls, intro, renderer, world, setNightLevel, ui, cameraman, labels, quality, tod, tour: world.tour, guide: world.guide, explode: world.explode, post, clock: simClock, life, economy, chat, step: stepWorld };
   window.__sceneReady = true;
 }
 
@@ -262,9 +274,11 @@ renderer.setAnimationLoop(() => {
   intro.update(t);
   stepWorld(dt);
   world.tour?.update(dt);
+  world.guide?.update(dt);
+  world.explode?.update(dt);
   if (!intro.active) {
     cameraman?.update(dt);
-    if (!world.tour?.playing) controls.update();
+    if (!world.tour?.playing && !world.guide?.playing) controls.update();
   }
   renderer.info.reset(); // counted over all passes of the frame
   post.render(dt);
