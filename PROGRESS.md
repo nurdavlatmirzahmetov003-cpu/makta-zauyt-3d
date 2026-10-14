@@ -12,7 +12,7 @@
 | 6 — UI & interactivity | ✅ done |
 | 7 — 360° tour | ✅ done |
 | 8 — Lighting, polish, performance | ✅ done |
-| 9 — Final QA & publishing | 🟡 QA script, README and size checks done; merge to `main` + Pages pending |
+| 9 — Final QA & publishing | ✅ done |
 
 ### Part 2 (`PROMPT2.md`)
 | Phase | Status |
@@ -20,7 +20,7 @@
 | 10 — Living factory: clock, day/night cycle, economy | ✅ done |
 | 11 — «Ақылды көмекші» chatbot + daily report | ✅ done |
 | 12 — Robot guide «Маржан» + «Бөлшектеп көру» | ✅ done |
-| 13 — Robots page, robot chat, manual control, final QA | ⏳ next |
+| 13 — Robots page, robot chat, manual control, final QA | ✅ done |
 
 ## Phase 0 — done
 - Vite 8 + Three.js 0.170.0 (pinned). `vite.config.js`: `base: './'`, `outDir: 'docs'`. `docs/` is committed (Pages backup source).
@@ -169,11 +169,11 @@ Deviations from the brief (deliberate):
 - Loading progress was already real (one `await requestAnimationFrame` per build step).
 - Screenshots: `screenshots/p8-night.png`, `p8-sunset.png`, `p8-led-wall.png`, `p8-features.png`.
 
-## Phase 9 — partly done
+## Phase 9 — done
 - `scripts/qa.mjs` (`npm run qa`): touch profile 1180×820 taps 53 interface steps (dock, card, lists, search, tour bar, finale, features, labels, roofs, time, quality, timeline, reset), screenshot after each, Kazakh glyph check (fonts API + canvas fallback comparison: no missing Ә Ғ Қ Ң Ө Ұ Ү Һ І in Inter or Unbounded), then 1180×820 / 820×1180 / 390×844 / 1920×1080 layout checks (every panel inside the viewport). Runs: all taps OK except a test-order bug (fixed); all four sizes fit; no console errors.
 - Fixed from QA: on phones the menu button now sits under the top bar (the card bottom sheet covered it) and the open menu hides the card behind it.
 - `README.md` (Kazakh): live link, screenshot table, 2-minute defence script, controls, tech notes.
-- Still to do: merge into `main`, confirm the Pages workflow (Settings → Pages → Source «GitHub Actions» may need to be enabled once by the owner).
+- Merged into `main` together with Part 2 (see Phase 13).
 
 ## Phase 10 — done (Part 2)
 - `src/sim/clock.js`: game time 0–1440 min + day number; **1× = 1 game minute per real second**; speeds ⏸ 0× 1× 2× 5× 10× 30×; `jumpTo()` fast-forwards (never backwards) over 2.5 s so every transition stays smooth. Starts at **07:40, «1-күн»** — the factory is already running.
@@ -201,6 +201,18 @@ Deviations from the brief (deliberate):
 - The building batch split per layer costs a few extra draw calls at rest.
 - Screenshots: `screenshots/p12-guide.png` (stop 2, the gate), `p12-explode-part.png` (the ginning hall apart, «Өндірістік машиналар» selected), `p12-layers.png` (the five base layers).
 
+## Phase 13 — done (Part 2)
+- **`robots.html`** — second Vite entry (`build.rollupOptions.input`), linked from the dock «РОБОТТАР ӘЛЕМІ» and back with «← Зауытқа қайту». Bright studio: mint → sky → pearl gradient, glossy clear-coated turntable with a glowing teal ring, soft contact shadows (shadow catcher), RoomEnvironment reflections, slow auto-rotation that stops on touch, one-finger 360° orbit and two-finger zoom. Bottom carousel with thumbnails rendered once from the real models; switching slides the current robot off and raises the next with a light-ring flash.
+- **12 robots** (`src/robots-page/roster.js`, `models.js`): «Маржан» (the guide model), «Оператор-Х1», «Сақшы», «Зерттеуші» (new non-instanced humanoid rig: walk, wave, dance, sit, work, tablet / scanner / badge), «Темірқол» (the factory `RobotArm`, pick-and-place with a box), «Жүкші» (AMR with a bale), «Көтергіш» (forklift, forks lift), «Қыран» (factory drone, laser scan cone), «Жинақшы» (the field harvester), plus new «Тазалықшы» (round cleaner with brushes), «Өрмекші» (hexapod with walking legs), «Шебер» (tracked repair robot with wrench and welder sparks). Info panel: name, type, «Қызметі», Биіктігі / Салмағы / Жылдамдығы / Датчиктері / Жұмыс орны, battery meter; «Зауытта көрсету» opens the factory with `?focus=…` (auto-enter, then the guide, a robot of that role, an AMR, a drone, the harvester or the robot's building).
+- **Hotspots**: pulsing dots projected from model space (visor, lidar, battery, gripper, legs, antennas…) with Kazakh callouts.
+- **Talk and commands** (`robot-chat.js`, `animator.js`): the Phase 11 normaliser + robot commands — сәлем / өзіңді таныстыр (wave + first-person intro), қол бұлға, би биле (per-type dance), алға / артқа жүр, оңға / солға бұрыл, айнал, секір (humanoids jump, drones hop, wheeled robots explain they cannot), отыр / тұр, жарықты қос / сөндір, түсіңді өзгерт (teal → gold → coral → violet, also the turntable ring), жұмыс істе (job animation), батарея қанша?, тоқта; unknown → an in-character reply + suggestion chips. Personalities: «Сақшы» strict and polite, «Маржан» cheerful, «Темірқол» laconic, others friendly. Command chips under the input; optional kk-KZ voice in / out.
+- **Manual control**: «🎮 Басқару» shows the virtual joystick (touch + mouse, `src/ui/joystick.js`) and «👋 💃 ⤴️ 💡 🛠️»; WASD / arrows; camera-relative driving, walk / drive / fly animations, the stage radius is respected, the camera follows.
+- **Factory «РОБОТТЫ БАСҚАРУ»** (`src/control/drive.js`): pick «Гуманоид робот» or «Дрон» (nearest to the view), third-person camera, joystick / WASD; building boxes and vehicles (with trailers) block the humanoid, the drone keeps ≥ 8 m and stays above roofs, ▲ ▼ altitude; «Шығу» walks / flies the robot back to its routine (no teleport).
+- **Final QA** (`npm run qa`, `scripts/qa.mjs`): factory 81 steps (all Part 1 and Part 2 buttons, clock speeds, KPI panel, chat chips, live report, **CSV download checked: UTF-8 BOM + Kazakh words**, guide, exploded views, driving with the joystick); robots page 42 steps (carousel, 17 chat commands + unknown, hotspot, joystick, 5 actions, all 12 robots, «Зауытта көрсету» → factory focus); layout checks at 1180×820 / 820×1180 / 390×844 / 1920×1080 (factory) and 1180×820 / 820×1180 / 390×844 (robots page) — everything fits; night sleep (phase «Түн», 85 % charging card) and morning wake-up (phase «Таңғы іске қосу», day 2) captured; Kazakh glyphs present in Inter and Unbounded (fonts API + canvas). Result: **all checks green, no console errors** (one step first failed on a zero-size label wrapper in the test itself; the selector now taps the label text, re-run green).
+- Fixes found by QA in Part 2: the KPI panel no longer replaces its close button every 0.5 s; exploded-view labels stay inside the screen; the dock hides while driving.
+- Draw calls (whole frame incl. shadows): gate view ≈ 814, top view ≈ 895, all 17 roofs open ≈ 1 350 — under 1 500.
+- Screenshots: `screenshots/p13-robots-marzhan.png`, `p13-robots-chat.png`, `p13-robots-hotspot.png`, `p13-drive-drone.png`.
+
 ## Known issues
 - Work is on branch `claude/trusting-sagan-r8s292`; Pages deploys only from `main` (merge in Phase 9 or earlier if a live preview is wanted).
 - Kazakh Unbounded glyphs are synthesized; shapes are clean, but kerning for them is default.
@@ -215,4 +227,4 @@ Deviations from the brief (deliberate):
 - The plot interior is still plain lawn; roads, buildings, the fence and the gate come in Phase 3. Trees inside the fence sit on its inner edge (x = ±295, z = −256, z = 234) to stay clear of the planned streets.
 
 ## Next step
-Part 2, Phase 13 — robots page (`robots.html`), robot chat and commands, manual control, final Part 2 QA.
+All phases of `PROMPT.md` and `PROMPT2.md` are done. Remaining check that needs the real device: FPS on the iPad («Орташа» preset).

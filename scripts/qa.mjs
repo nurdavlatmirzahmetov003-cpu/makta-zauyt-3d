@@ -162,9 +162,12 @@ async function tapAll() {
   await enter(page);
   // Faster software rendering; the sim clock is paused so time-of-day checks are deterministic (07:4x).
   await page.evaluate(() => { window.__app.quality.set('low'); window.__app.clock.setSpeed(0); });
+  // --taps=a-b runs only that range of steps (1-based), after a fast setup.
+  const range = (args.find((x) => x.startsWith('--taps=')) || '--taps=1-999').slice(7).split('-').map(Number);
   let i = 0;
   for (const [sel, ff, check, label] of TAPS) {
     i++;
+    if (i < range[0] || i > range[1]) continue;
     try {
       if (sel === 'canvas@center') await page.touchscreen.tap(712, 372);
       else if (sel.startsWith('joy:')) await drag(page, sel.slice(4), ff);
